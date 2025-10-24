@@ -1,6 +1,4 @@
 bcrypt==5.0.0
-boto3==1.40.11
-botocore==1.40.11
 Faker==37.8.0
 kiwisolver==1.4.7
 pymongo==4.15.3
@@ -13,3 +11,4 @@ robotframework-faker==6.0.0
 robotframework-jsonlibrary==0.5
 robotframework-pythonlibcore==4.4.1
 robotframework-requests==0.9.7
+robotframework-jsonschemalibrary==6.1.3
