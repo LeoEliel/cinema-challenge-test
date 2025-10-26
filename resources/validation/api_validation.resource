@@ -25,7 +25,7 @@ Validate Successful API Response
 
 Validate Error API Response
     [Documentation]    Valida o status code e opcionalmente uma mensagem de erro.
-    [Arguments]    ${response}    ${expected_status_code}    ${expected_error_message}=${None}
+    [Arguments]    ${response}    ${expected_status_code}    ${schema_file}    ${expected_error_message}=${None}    
 
     # 1. Valida o Status Code
     Should Be Equal As Strings    ${response.status_code}    ${expected_status_code}
@@ -37,3 +37,8 @@ Validate Error API Response
 
     # 3. (Opcional) Poderia validar o campo 'success' como False
     Run Keyword If    'success' in ${body}    Should Be Equal    ${body['success']}    ${False}
+
+    # 3. Valida o Schema JSON
+    Validate Json
+    ...    ${schema_file}
+    ...    ${body}

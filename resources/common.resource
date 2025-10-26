@@ -28,10 +28,6 @@ Resource    api/auth_service.resource
 
 Resource    validation/api_validation.resource
 
-*** Variables ***
-${CLEANUP_EMAIL}
-
-
 *** Keywords ***
 #Keywords de Suite
 API Test Setup
@@ -40,8 +36,10 @@ API Test Setup
 
 
 API Test Teardown
+    [Arguments]        ${CLEANUP_EMAIL}=${None}
     [Documentation]    Fecha a sessão de API
-    Remove User And Related Data    ${CLEANUP_EMAIL}
+    Run Keyword If   '${CLEANUP_EMAIL}' != '${None}'
+    ...    Remove User And Related Data    ${CLEANUP_EMAIL}
     
     Delete All Sessions
 

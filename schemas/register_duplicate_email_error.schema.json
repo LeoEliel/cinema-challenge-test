@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "description": "Indica que a operação falhou",
+      "type": "boolean",
+      "const": false
+    },
+    "message": {
+      "description": "Mensagem de erro indicando que o usuário já existe",
+      "type": "string",
+      "const": "User already exists"
+    }
+  },
+  "required": ["success", "message"],
+  "additionalProperties": false
+}
