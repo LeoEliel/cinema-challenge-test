@@ -2,31 +2,38 @@
 Documentation    Keywords de serviço para a API de Autenticação (Auth)
 ...
 ...    Este resource implementa o padrão Service Objects.
-...    Ele contém keywords para interagir com os endpoints /auth/login e /auth/register.
+...    Ele contém keywords para interagir com os endpoints de autenticação.
 
 Resource    ../common.resource
 
 *** Keywords ***
-POST To
-    [Documentation]    Envia uma requisição POST para o endpoint especificado no argumento "endpoint" e "payload" e retorna a resposta.
-    [Arguments]        ${endpoint}    ${payload}
+# AUTH SERVICE OBJECTS - Específicos do domínio de Autenticação
 
-    ${response}=    POST On Session
-    ...    api                     # Nome da sessão que criamos no common.resource
-    ...    url=${endpoint}             # Endpoint
-    ...    json=${payload}          # O corpo (body) da requisição
-    ...    expected_status=any     # Não queremos que o teste falhe aqui, vamos validar no teste
-
+Register User
+    [Documentation]    Registra um novo usuário no sistema.
+    [Arguments]        ${user_data}    ${headers}=&{EMPTY}
+    
+    ${response}=    POST To    /auth/register    ${user_data}    ${headers}
     RETURN    ${response}
 
-# POST Register
-#     [Documentation]    Envia uma requisição POST para /auth/register e retorna a resposta.
-#     [Arguments]    ${payload}
+Login User
+    [Documentation]    Autentica um usuário no sistema.
+    [Arguments]        ${credentials}    ${headers}=&{EMPTY}
+    
+    ${response}=    POST To    /auth/login    ${credentials}    ${headers}
+    RETURN    ${response}
 
-#     ${response}=    POST On Session
-#     ...    api
-#     ...    /auth/register          # <-- Endpoint correto para registro
-#     ...    json=${payload}
-#     ...    expected_status=any     # <-- Validaremos o status no teste
+Refresh Auth Token
+    [Documentation]    Renova o token de autenticação.
+    [Arguments]        ${refresh_token}    ${headers}=&{EMPTY}
+    
+    ${payload}=    Create Dictionary    refreshToken=${refresh_token}
+    ${response}=    POST To    /auth/refresh    ${payload}    ${headers}
+    RETURN    ${response}
 
-#     RETURN    ${response}
+Logout User
+    [Documentation]    Faz logout do usuário.
+    [Arguments]        ${headers}=&{EMPTY}
+    
+    ${response}=    POST To    /auth/logout    ${EMPTY}    ${headers}
+    RETURN    ${response}
