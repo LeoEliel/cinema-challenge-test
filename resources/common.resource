@@ -65,3 +65,60 @@ Get Fixture From Collection
     ${json_data}=       Load Json From File    ${file_path}    encoding=UTF-8
     
     RETURN        ${json_data}[${context}]
+
+# HTTP KEYWORDS GENÉRICAS - Infraestrutura
+
+POST To
+    [Documentation]    Envia uma requisição POST para o endpoint especificado.
+    [Arguments]        ${endpoint}    ${payload}    ${headers}=&{EMPTY}
+    
+    ${response}=    Run Keyword If    ${headers}
+    ...    POST On Session    api    url=${endpoint}    json=${payload}    headers=${headers}    expected_status=any
+    ...    ELSE
+    ...    POST On Session    api    url=${endpoint}    json=${payload}    expected_status=any
+    
+    RETURN    ${response}
+
+GET From
+    [Documentation]    Envia uma requisição GET para o endpoint especificado.
+    [Arguments]        ${endpoint}    ${headers}=&{EMPTY}
+    
+    ${response}=    Run Keyword If    ${headers}
+    ...    GET On Session    api    url=${endpoint}    headers=${headers}    expected_status=any
+    ...    ELSE
+    ...    GET On Session    api    url=${endpoint}    expected_status=any
+    
+    RETURN    ${response}
+
+PUT To
+    [Documentation]    Envia uma requisição PUT para o endpoint especificado.
+    [Arguments]        ${endpoint}    ${payload}    ${headers}=&{EMPTY}
+    
+    ${response}=    Run Keyword If    ${headers}
+    ...    PUT On Session    api    url=${endpoint}    json=${payload}    headers=${headers}    expected_status=any
+    ...    ELSE
+    ...    PUT On Session    api    url=${endpoint}    json=${payload}    expected_status=any
+    
+    RETURN    ${response}
+
+PATCH To
+    [Documentation]    Envia uma requisição PATCH para o endpoint especificado.
+    [Arguments]        ${endpoint}    ${payload}    ${headers}=&{EMPTY}
+    
+    ${response}=    Run Keyword If    ${headers}
+    ...    PATCH On Session    api    url=${endpoint}    json=${payload}    headers=${headers}    expected_status=any
+    ...    ELSE
+    ...    PATCH On Session    api    url=${endpoint}    json=${payload}    expected_status=any
+    
+    RETURN    ${response}
+
+DELETE From
+    [Documentation]    Envia uma requisição DELETE para o endpoint especificado.
+    [Arguments]        ${endpoint}    ${headers}=&{EMPTY}
+    
+    ${response}=    Run Keyword If    ${headers}
+    ...    DELETE On Session    api    url=${endpoint}    headers=${headers}    expected_status=any
+    ...    ELSE
+    ...    DELETE On Session    api    url=${endpoint}    expected_status=any
+    
+    RETURN    ${response}
