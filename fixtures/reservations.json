@@ -1,0 +1,21 @@
+{
+  "base_valid_reservation": {
+    "session": "PLACEHOLDER_SESSION_ID",
+    "seats": [
+      {"row": "B", "number": 4, "type": "full"}
+    ],
+    "paymentMethod": "credit_card"
+  },
+  "reservation_with_multiple_seats": {
+     "session": "PLACEHOLDER_SESSION_ID",
+     "seats": [
+       {"row": "D", "number": 5, "type": "full"},
+       {"row": "D", "number": 6, "type": "half"}
+     ],
+     "paymentMethod": "debit_card"
+  },
+  "reservation_missing_seats": {
+     "session": "PLACEHOLDER_SESSION_ID",
+     "paymentMethod": "pix"
+  }
+}

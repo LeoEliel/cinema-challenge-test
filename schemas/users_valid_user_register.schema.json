@@ -1,0 +1,42 @@
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "description": "Indica se a operação foi bem-sucedida",
+      "type": "boolean"
+    },
+    "data": {
+      "description": "Contém os dados do usuário e o token de acesso",
+      "type": "object",
+      "properties": {
+        "_id": {
+          "description": "O ID único do usuário criado",
+          "type": "string"
+        },
+        "name": {
+          "description": "O nome completo do usuário",
+          "type": "string",
+          "minLength": 1
+        },
+        "email": {
+          "description": "O endereço de e-mail único do usuário",
+          "type": "string",
+          "format": "email"
+        },
+        "role": {
+          "description": "A função do usuário no sistema",
+          "type": "string"
+        },
+        "token": {
+          "description": "O token JWT para autenticação subsequente",
+          "type": "string",
+          "minLength": 50
+        }
+      },
+      "required": ["_id", "name", "email", "role", "token"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["success", "data"],
+  "additionalProperties": false
+}

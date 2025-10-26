@@ -1,0 +1,21 @@
+{
+  "base_valid_movie": {
+    "title": "Fixture Movie Title Static",
+    "synopsis": "Synopsis for the static fixture movie.",
+    "director": "Fixture Director Static",
+    "genres": ["Fixture", "Static"],
+    "duration": 115,
+    "classification": "PG",
+    "poster": "static_poster.jpg",
+    "releaseDate": "2025-10-01T00:00:00.000Z"
+  },
+  "movie_missing_title": {
+    "synopsis": "Movie missing title static.",
+    "director": "Fixture Director Static",
+    "genres": ["Static"],
+    "duration": 95,
+    "classification": "G",
+    "poster": "missing_static.jpg",
+    "releaseDate": "2025-02-01T00:00:00.000Z"
+  }
+}
