@@ -7,19 +7,21 @@ Resource        ../common.resource
 *** Keywords ***
 Validate Successful API Response
     [Documentation]    Valida o status code, o schema e o campo 'success'.
-    [Arguments]    ${response}    ${expected_status_code}    ${schema_path}
+    [Arguments]    ${response}    ${expected_status_code}    ${schema_file}
 
+    ${body}=    Set Variable    ${response.json()}
+    ${stringified_body}    Convert Json To String    ${body}
     # 1. Valida o Status Code
     Should Be Equal As Strings    ${response.status_code}    ${expected_status_code}
 
     # 2. Valida o campo 'success' (se existir)
-    ${body}=    Set Variable    ${response.json()}
-    Run Keyword If    'success' in ${body}    Should Be True    ${body['success']}
+        
+    Run Keyword If    'success' in ${body}    Should Be Equal    ${body['success']}    ${True}
 
     # 3. Valida o Schema JSON
     Validate Json
-    ...    json_document=${body}
-    ...    schema_file=${schema_path}
+    ...    ${schema_file}
+    ...    ${body}
 
 Validate Error API Response
     [Documentation]    Valida o status code e opcionalmente uma mensagem de erro.
@@ -34,4 +36,4 @@ Validate Error API Response
     ...    Should Be Equal As Strings    ${body['message']}    ${expected_error_message}
 
     # 3. (Opcional) Poderia validar o campo 'success' como False
-    Run Keyword If    'success' in ${body}    Should Not Be True    ${body['success']}
+    Run Keyword If    'success' in ${body}    Should Be Equal    ${body['success']}    ${False}
