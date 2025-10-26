@@ -1,0 +1,15 @@
+{
+  "base_valid_session": {
+    "movie": "PLACEHOLDER_MOVIE_ID",
+    "theater": "PLACEHOLDER_THEATER_ID",
+    "datetime": "2025-12-24T19:30:00.000Z",
+    "fullPrice": 19,
+    "halfPrice": 9.5
+  },
+  "session_missing_datetime": {
+     "movie": "PLACEHOLDER_MOVIE_ID",
+     "theater": "PLACEHOLDER_THEATER_ID",
+     "fullPrice": 21,
+     "halfPrice": 10.5
+  }
+}

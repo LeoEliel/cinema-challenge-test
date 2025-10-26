@@ -30,7 +30,7 @@
         "token": {
           "description": "O token JWT para autenticação subsequente",
           "type": "string",
-          "minLength": 10
+          "minLength": 50
         }
       },
       "required": ["_id", "name", "email", "role", "token"],

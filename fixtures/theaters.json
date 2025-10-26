@@ -1,0 +1,11 @@
+{
+  "base_valid_theater": {
+    "name": "Fixture Theater Static",
+    "capacity": 80,
+    "type": "Standard"
+  },
+  "theater_missing_capacity": {
+    "name": "Theater Missing Capacity Static",
+    "type": "3D"
+  }
+}
