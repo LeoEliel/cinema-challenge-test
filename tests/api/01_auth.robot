@@ -63,3 +63,29 @@ CTC-002_API (API): Tentativa de registro com e-mail já existente
     ...    response=${response}
     ...    expected_status_code=400
     ...    schema_file=register_duplicate_email_error.schema.json
+
+CTC-003_API (API): Tentativa de registro com formato de e-mail inválido
+    [Tags]    API    Negative    US-AUTH-001    CTC-003_API
+    [Documentation]
+    ...              Dado que eu tenho um payload de registro com email mal formatado
+    ...              Quando eu envio uma requisição POST para "/auth/register"
+    ...              Então a resposta deve ter o status code 400
+    ...              E o corpo da resposta deve conter uma mensagem de erro sobre o formato do e-mail
+    
+    # 1. Dado (Given) - Carrega os dados do fixture com email inválido
+    ${fixture}        Get Fixture From Collection   users    user_with_invalid_email_format
+
+    Set Test Variable    ${CLEANUP_EMAIL}    ${None}
+
+    # 2. Quando (When) - Tenta registrar com o payload inválido
+    ${response}=    Register User    ${fixture}
+    
+    ${expected_errors_dict}        Create Dictionary    email=Please provide a valid email
+
+    # 3. Então (Then) - Valida o erro 400
+    Validate Error API Response
+    ...    response=${response}
+    ...    expected_status_code=400
+    ...    expected_error_message=Validation failed
+    ...    expected_errors_dict=${expected_errors_dict}
+    ...    schema_file=register_invalid_email_error.schema.json

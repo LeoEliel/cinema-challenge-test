@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "const": false
+    },
+    "message": {
+      "type": "string",
+      "const": "Validation failed"
+    },
+    "errors": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "const": "Please provide a valid email"
+        }
+      },
+      "required": ["email"],
+      "additionalProperties": true
+    }
+  },
+  "required": ["success", "message", "errors"],
+  "additionalProperties": false
+}

@@ -24,21 +24,33 @@ Validate Successful API Response
     ...    ${body}
 
 Validate Error API Response
-    [Documentation]    Valida o status code e opcionalmente uma mensagem de erro.
-    [Arguments]    ${response}    ${expected_status_code}    ${schema_file}    ${expected_error_message}=${None}    
+    [Documentation]    Validates status code, optionally a top-level message,
+    ...    optionally nested field errors, and optionally a schema.
+    [Arguments]    ${response}
+    ...            ${expected_status_code}
+    ...            ${expected_error_message}=${None} 
+    ...            ${expected_errors_dict}=${None}
+    ...            ${schema_file}=${None}        # Schema file path
 
     # 1. Valida o Status Code
     Should Be Equal As Strings    ${response.status_code}    ${expected_status_code}
 
-    # 2. Valida a mensagem de erro (se fornecida)
     ${body}=    Set Variable    ${response.json()}
+
+    # 2. Valida a mensagem de erro de nível superior (se fornecida)
     Run Keyword If    '${expected_error_message}' != '${None}' and 'message' in ${body}
     ...    Should Be Equal As Strings    ${body['message']}    ${expected_error_message}
 
-    # 3. (Opcional) Poderia validar o campo 'success' como False
-    Run Keyword If    'success' in ${body}    Should Be Equal    ${body['success']}    ${False}
+    # 3. Valida erros de campo aninhados (NOVO!)
+    Run Keyword If    ${expected_errors_dict} is not ${None} and 'errors' in ${body}
+    ...    Dictionary Should Contain Sub Dictionary    ${body['errors']}    ${expected_errors_dict}
 
-    # 3. Valida o Schema JSON
-    Validate Json
+    # 4. Valida o schema JSON (se fornecido)
+    Run Keyword If    '${schema_file}' != '${None}'
+    ...    Validate Json    
     ...    ${schema_file}
     ...    ${body}
+
+    # 5. Valida 'success' como False (se existir)
+    Run Keyword If    'success' in ${body}    
+    ...    Should Not Be True    ${body['success']}
