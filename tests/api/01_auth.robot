@@ -16,17 +16,14 @@ Test Teardown     API Test Teardown
 *** Test Cases ***
 CTC-001_API (API): Registro de novo usuário com sucesso pela API
     [Tags]    API    Smoke    US-AUTH-001    
-        
+
     ${fixture}        Get Fixture From Collection   users    valid_user_register
     ${endpoint}            Set Variable    /auth/register
     
     Set Global Variable    ${CLEANUP_EMAIL}    ${fixture}[email]
 
     # 3. Registra o usuário
-    ${response}=        POST On Session    
-    ...    alias=api
-    ...    url=${endpoint}
-    ...    json=${fixture}
+    ${response}    Register User    ${fixture}
 
     # 4. Valida
     Validate Successful API Response
