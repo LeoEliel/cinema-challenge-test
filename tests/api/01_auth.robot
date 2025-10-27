@@ -190,3 +190,62 @@ CTC-007_API (API): Tentativa de acesso a rota protegida com token inválido
     ...    response=${response}
     ...    expected_status_code=401
     ...    schema_file=unauthorized_error_response.schema.json
+
+CTC-008_API (API): Visualizar informações do perfil pela API com sucesso
+    [Tags]    API    Smoke    US-AUTH-004    CTC-008_API
+    [Documentation]
+    ...              Dado que eu estou autenticado com um token de usuário válido
+    ...              Quando eu envio uma requisição GET para o endpoint "/auth/me"
+    ...              Então a resposta deve ter o status code 200
+    ...              E o corpo da resposta deve conter meu nome, e-mail e função (role) dentro do objeto 'data'
+
+    # --- SETUP INLINE ---
+    # Carrega os dados do usuário base do fixture
+    ${fixture_user_data}=    Get Fixture From Collection   users    valid_user_register
+    # Define o e-mail para ser limpo pelo Teardown padrão deste teste
+    Set Test Variable        ${CLEANUP_EMAIL}     ${fixture_user_data}[email]
+    # Garante um estado limpo removendo o usuário, caso exista
+    Remove User And Related Data    ${fixture_user_data}[email]
+    # Insere o usuário diretamente no banco de dados (alternativa: usar Register User via API)
+    ${user_id}=    Insert User Directly Into DB    ${fixture_user_data}
+    # Verifica se a inserção no banco foi bem-sucedida
+    Should Not Be Equal    ${user_id}    ${None}    msg=Falha ao inserir usuário pré-requisito no DB
+    # Log para registrar a criação
+    Log    Usuário pré-requisito ${fixture_user_data}[email] inserido com ID ${user_id}
+
+    # Prepara as credenciais para o login
+    &{login_credentials}=    Create Dictionary
+    ...    email=${fixture_user_data}[email]
+    ...    password=${fixture_user_data}[password]
+    # Realiza o login via API para obter um token válido
+    ${login_response}=    Login User    credentials=${login_credentials}
+    # Valida se o login foi bem-sucedido (importante para garantir que temos um token bom)
+    Validate Successful API Response    ${login_response}    200    login_success_response.schema.json
+
+    # Extrai o token da resposta de login
+    ${valid_token_for_test}=    Set Variable    ${login_response.json()}[data][token]
+    # Log para registrar o token obtido
+    Log    Token válido obtido para o teste: ${valid_token_for_test}
+    # --- FIM DO SETUP INLINE ---
+
+    # Monta o dicionário de Headers com o token VÁLIDO obtido no Setup Inline
+    &{auth_headers}=    Create Dictionary    Authorization=Bearer ${valid_token_for_test}
+
+    # Envia a requisição GET para buscar o perfil usando a keyword do serviço de autenticação
+    ${response}=    Get User Profile    headers=${auth_headers}
+
+    # Valida se a API retornou sucesso (200 OK) e se a estrutura da resposta está correta
+    Validate Successful API Response
+    ...    response=${response}
+    ...    expected_status_code=200
+    ...    schema_file=get_profile_response.schema.json
+
+    # Extrai o corpo da resposta JSON para validações de valor
+    ${body}=    Set Variable    ${response.json()}
+
+    # Valida se os valores retornados dentro do objeto 'data' correspondem aos dados do usuário criado
+    Should Be Equal As Strings    ${body['data']['_id']}      ${user_id}
+    Should Be Equal As Strings    ${body['data']['name']}      ${fixture_user_data}[name]
+    Should Be Equal As Strings    ${body['data']['email']}     ${fixture_user_data}[email]
+    # Assume que o usuário criado no setup tem a role 'user'
+    Should Be Equal As Strings    ${body['data']['role']}      user

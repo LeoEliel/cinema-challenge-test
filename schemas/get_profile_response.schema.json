@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "description": "Indica sucesso na busca do perfil",
+      "type": "boolean",
+      "const": true
+    },
+    "data": {
+      "description": "Contém os dados do perfil do usuário autenticado",
+      "type": "object",
+      "properties": {
+        "_id": {
+          "description": "O ID único do usuário",
+          "type": "string"
+        },
+        "name": {
+          "description": "O nome completo do usuário",
+          "type": "string"
+        },
+        "email": {
+          "description": "O endereço de e-mail do usuário",
+          "type": "string",
+          "format": "email"
+        },
+        "role": {
+          "description": "A função do usuário no sistema",
+          "type": "string",
+          "enum": ["user", "admin"]
+        }
+      },
+      "required": ["_id", "name", "email", "role"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["success", "data"],
+  "additionalProperties": false
+}
