@@ -1,0 +1,42 @@
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "description": "Indica sucesso na autenticação",
+      "type": "boolean",
+      "const": true
+    },
+    "data": {
+      "description": "Dados retornados do usuário",
+      "type": "object",
+      "properties":{
+         "_id":{
+            "description": "ID único do usuário",
+            "type": "string"
+         },
+          "name":{
+              "description": "Nome do usuário",
+              "type": "string"
+          },
+          "email":{
+              "description": "Email do usuário",
+              "type": "string",
+              "format": "email"
+          },
+          "role":{
+              "description": "Papel do usuário",
+              "type": "string",
+              "enum": ["admin", "user"]
+          },
+          "token": {
+            "description": "Token JWT para autorização",
+            "type": "string"
+          }
+        },
+        "required": ["_id", "name", "email", "role", "token"],
+        "additionalProperties": false
+      }
+    },
+    "required": ["success", "data"],
+    "additionalProperties": false
+}
