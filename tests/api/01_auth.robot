@@ -271,7 +271,7 @@ CTC-009_API (API): Atualizar nome do perfil pela API com sucesso
 
 
 CTC-009_NEGATIVE_INVALID_NAME_API (API): Tentativa de atualizar perfil com nome vazio (API aceita mas não altera)
-    [Tags]    API    Negative    US-AUTH-004    CTC-009_NEGATIVE_INVALID_NAME    InvalidData    NonStrictValidation
+    [Tags]    API    Negative    US-AUTH-004    CTC-009_Negative    InvalidData    NonStrictValidation
     [Documentation]
     ...              Dado que estou autenticado com um token de usuário válido
     ...              Quando envio uma requisição PUT para "/auth/profile" com 'name' vazio
@@ -311,6 +311,61 @@ CTC-009_NEGATIVE_INVALID_NAME_API (API): Tentativa de atualizar perfil com nome 
     Should Be Equal As Strings    ${body['data']['_id']}   ${user_id}
     Should Be Equal As Strings    ${body['data']['email']}   ${fixture_user_data}[email]
     Should Be Equal As Strings    ${body['data']['role']}    user
+
+CTC-009_NEGATIVE_FORBIDDEN_FIELD_API (API): Tentativa de atualizar campos proibidos (email, role)
+    [Tags]    API    Negative    US-AUTH-004    CTC-009_Negative    ForbiddenField    NonStrictValidation
+    [Documentation]
+    ...              Dado que estou autenticado com um token de usuário válido
+    ...              Quando envio uma requisição PUT para "/auth/profile" tentando alterar 'email' e 'role'
+    ...              Então a resposta deve ter o status code 200 # API não rejeita
+    ...              E o corpo da resposta deve conter os dados do usuário com email e role *originais* inalterados
+    # Reutiliza setup para ter usuário (${fixture_user_data}) e token válidos (${VALID_TOKEN})
+    [Setup]     Setup User And Get Valid Token
+
+    # --- SETUP INLINE (Preparação dos dados para a Ação) ---
+    # Define valores "proibidos" que tentaremos enviar
+    ${novo_email_proibido}=    FakerLibrary.Email
+    ${nova_role_proibida}=     Set Variable    admin
+    
+    # Pega os dados ORIGINAIS do fixture para comparação posterior
+    ${fixture_user_data}=     Get Fixture From Collection   users    valid_user_register
+    ${original_email}=        Set Variable                  ${fixture_user_data}[email]
+    
+    # Role padrão do usuário criado no setup
+    ${original_role}=         Set Variable                  user 
+
+    # Cria o payload tentando alterar campos permitidos (name) e proibidos (email, role)
+    ${nome_permitido}=        FakerLibrary.Name
+    &{update_payload_forbidden}=    Create Dictionary
+    ...    name=${nome_permitido}          # Campo permitido
+    ...    email=${novo_email_proibido}    # Campo PROIBIDO
+    ...    role=${nova_role_proibida}      # Campo PROIBIDO
+
+    # Monta os Headers com o token VÁLIDO obtido no Setup
+    &{auth_headers}=              Create Dictionary    Authorization=Bearer ${VALID_TOKEN}
+    # --- FIM SETUP INLINE ---
+
+    # Envia a requisição PUT para tentar atualizar o perfil com campos proibidos
+    ${response}=    Update User Profile    payload=${update_payload_forbidden}    headers=${auth_headers}
+
+    # Valida se a API retornou 200 OK e se a estrutura da resposta está correta (schema de sucesso)
+    Validate Successful API Response
+    ...    response=${response}
+    ...    expected_status_code=200
+    ...    schema_file=update_profile_response.schema.json
+
+    # Extrai o corpo da resposta para validação de valor
+    ${body}=    Set Variable    ${response.json()}
+
+    # *** VALIDAÇÃO CRUCIAL ***
+    # Verifica se os campos proibidos ('email' e 'role') retornados são os ORIGINAIS
+    Should Be Equal As Strings    ${body['data']['email']}    ${original_email}    msg=API aceitou payload com email proibido, mas o email retornado deveria ser o original!
+    Should Be Equal As Strings    ${body['data']['role']}     ${original_role}     msg=API aceitou payload com role proibida, mas a role retornada deveria ser a original!
+    Log    Verificado: Email (${body['data']['email']}) e Role (${body['data']['role']}) permaneceram inalterados.
+
+    # Valida se o campo permitido ('name') FOI atualizado corretamente
+    Should Be Equal As Strings    ${body['data']['name']}     ${nome_permitido}    msg=O campo 'name' permitido não foi atualizado como esperado.
+
 *** Keywords ***
 Setup User And Get Valid Token
     [Documentation]    Garante que um usuário exista, faz login via API 
