@@ -162,3 +162,31 @@ CTC-005_API (API): Tentativa de login com credenciais inválidas pela API
     ...    response=${response}
     ...    expected_status_code=401
     ...    schema_file=login_invalid_credentials_error.schema.json
+
+CTC-007_API (API): Tentativa de acesso a rota protegida com token inválido
+    [Tags]    API    Negative    US-AUTH-003    CTC-007_API
+    [Documentation]
+    ...              Dado que eu tenho um token de autenticação inválido
+    ...              Quando eu tento enviar uma requisição GET para a rota protegida "/auth/me" com esse token
+    ...              Então a resposta deve ter o status code 401
+    ...              E o corpo da resposta deve conter a mensagem "Not authorized to access this route"
+    # Sobrescreve o Setup padrão
+    Set Test Variable    ${INVALID_TOKEN}    Bearer INVALIDTOKEN
+    # Sobrescreve o Teardown padrão
+    [Teardown]  No Operation
+
+    # Loga o token inválido que será utilizado
+    Log    Usando token inválido: ${INVALID_TOKEN}
+
+    # Monta o dicionário de Headers que será enviado na requisição
+    &{invalid_auth_token}=    Create Dictionary    Authorization=${INVALID_TOKEN}
+
+    # **AÇÃO ATUALIZADA:** Envia a requisição GET usando a nova keyword do serviço
+    # Passamos apenas os headers, pois é o que define a autenticação neste teste
+    ${response}=    Get User Profile    headers=${invalid_auth_token}
+
+    # Valida se a API retornou o erro 401 Unauthorized esperado
+    Validate Error API Response
+    ...    response=${response}
+    ...    expected_status_code=401
+    ...    schema_file=unauthorized_error_response.schema.json

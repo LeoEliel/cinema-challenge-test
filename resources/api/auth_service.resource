@@ -11,25 +11,18 @@ Resource    ../common.resource
 
 Register User
     [Documentation]    Registra um novo usuário no sistema.
-    [Arguments]        ${user_data}    ${headers}=&{EMPTY}
+    [Arguments]        ${user_data}=&{EMPTY}    ${headers}=&{EMPTY}
     
     ${response}=    POST To    /auth/register    ${user_data}    ${headers}
     RETURN    ${response}
 
 Login User
     [Documentation]    Autentica um usuário no sistema.
-    [Arguments]        ${credentials}    ${headers}=&{EMPTY}
+    [Arguments]        ${credentials}=&{EMPTY}    ${headers}=&{EMPTY}
     
     ${response}=    POST To    /auth/login    ${credentials}    ${headers}
     RETURN    ${response}
 
-Refresh Auth Token
-    [Documentation]    Renova o token de autenticação.
-    [Arguments]        ${refresh_token}    ${headers}=&{EMPTY}
-    
-    ${payload}=    Create Dictionary    refreshToken=${refresh_token}
-    ${response}=    POST To    /auth/refresh    ${payload}    ${headers}
-    RETURN    ${response}
 
 Logout User
     [Documentation]    Faz logout do usuário.
@@ -37,3 +30,18 @@ Logout User
     
     ${response}=    POST To    /auth/logout    ${EMPTY}    ${headers}
     RETURN    ${response}
+
+Get User Profile
+    [Documentation]    Retorna profile do usuário atualmente logado.
+    [Arguments]        ${user_data}=&{EMPTY}    ${headers}=&{EMPTY}
+
+    ${response}=    GET From    /auth/me    ${headers}
+    RETURN    ${response}
+
+# Refresh Auth Token
+#     [Documentation]    Renova o token de autenticação.
+#     [Arguments]        ${refresh_token}    ${headers}=&{EMPTY}
+    
+#     ${payload}=    Create Dictionary    refreshToken=${refresh_token}
+#     ${response}=    POST To    /auth/refresh    ${payload}    ${headers}
+#     RETURN    ${response}
