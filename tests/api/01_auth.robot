@@ -127,3 +127,38 @@ CTC-004_API (API): Login com credenciais válidas pela API
     ...    response=${response}
     ...    expected_status_code=200
     ...    schema_file=login_success_response.schema.json
+
+CTC-005_API (API): Tentativa de login com credenciais inválidas pela API
+    [Tags]    API    Negative    US-AUTH-002    CTC-005_API
+    [Documentation]
+    ...              Dado que eu tenho as credenciais de um usuário com senha incorreta
+    ...              Quando eu envio uma requisição POST para o endpoint "/auth/login"
+    ...              Então a resposta deve ter o status code 401
+    ...              E o corpo da resposta deve conter uma mensagem de "Invalid email or password"
+
+    # --- SETUP INLINE ---
+    # Carrega os dados do fixture que será usado como base (usuário válido)
+    ${fixture_user_data}=    Get Fixture From Collection   users    valid_user_register
+    # Define o e-mail que será limpo pelo Teardown padrão
+    Set Test Variable        ${CLEANUP_EMAIL}     ${fixture_user_data}[email]
+    # Garante que o usuário de teste exista, limpando qualquer versão anterior
+    Remove User And Related Data    ${fixture_user_data}[email]
+    # Insere o usuário de teste diretamente no banco de dados
+    ${user_id}=    Insert User Directly Into DB    ${fixture_user_data}
+    # Verifica se a inserção no banco de dados foi bem-sucedida
+    Should Not Be Equal    ${user_id}    ${None}    msg=Falha ao inserir usuário pré-requisito para teste de login inválido no DB
+    # Log para registrar a criação do usuário de pré-requisito
+    Log    Usuário pré-requisito ${fixture_user_data}[email] inserido com ID ${user_id}
+    # --- FIM DO SETUP INLINE ---
+
+    # Monta o payload (credenciais) para a tentativa de login usando o e-mail correto e uma senha inválida
+    &{login_credentials}=    Get Fixture From Collection    users    login_invalid_password
+
+    # Envia a requisição de login usando a keyword correta do serviço de autenticação
+    ${response}=    Login User    credentials=${login_credentials}
+
+    # Valida a resposta de erro recebida da API
+    Validate Error API Response
+    ...    response=${response}
+    ...    expected_status_code=401
+    ...    schema_file=login_invalid_credentials_error.schema.json

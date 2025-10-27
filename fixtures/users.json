@@ -4,16 +4,16 @@
     "email": "fixture.user.static@test.cinema.com",
     "password": "password123"
   },
-  "user_with_invalid_email_format": {
-    "name": "Invalid Email Static",
-    "email": "invalid-email-format-static",
-    "password": "password123"
-  },
   "admin_data_for_db_insert": {
     "name": "Fixture Admin DB Static",
     "email": "fixture.admin.static@test.cinema.com",
     "password": "password123",
     "role": "admin"
+  },
+  "user_with_invalid_email_format": {
+    "name": "Invalid Email Static",
+    "email": "invalid-email-format-static",
+    "password": "password123"
   },
   "user_for_duplicate_email_test": {
     "name": "Email Duplicado Static",
@@ -23,5 +23,9 @@
   "user_missing_name_register": {
     "email": "missing.name.static@test.cinema.com",
     "password": "password123"
+  },
+  "login_invalid_password": {
+    "email": "fixture.user.static@test.cinema.com",
+    "password": "senhaerrada123"
   }
 }
