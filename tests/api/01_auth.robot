@@ -233,21 +233,20 @@ CTC-009_API (API): Atualizar nome do perfil pela API com sucesso
     ...              E o corpo da resposta deve conter os dados atualizados com o novo nome
     
     # --- SETUP INLINE (Preparação dos dados para a Ação) ---
+
     # Reutiliza setup para ter usuário e token válidos (${VALID_TOKEN})
     [Setup]     Setup User And Get Valid Token
 
     # Gera um novo nome dinâmico para garantir a atualização
     ${novo_nome}=        FakerLibrary.Name
-    # Pega a senha atual do fixture (a mesma usada para criar o usuário no Setup)
-    ${fixture_user_data}=  Get Fixture From Collection   users    valid_user_register
-    ${senha_atual}=        Set Variable              ${fixture_user_data}[password]
+
+    # Pega nova senha dinâmica
+    ${nova_senha}=        FakerLibrary.Password
 
     # Cria o payload para PUT /auth/profile
-    # Inclui o novo nome e a senha atual. Deixa newPassword vazio/nulo (ou omite, se a API permitir)
     &{update_payload}=    Create Dictionary
     ...    name=${novo_nome}
-    ...    currentPassword=${senha_atual}
-    # ...    newPassword=${None} # Ou omita esta linha se a API não exigir
+    ...    newPassword=${nova_senha}
 
     # Monta os Headers com o token VÁLIDO obtido no Setup
     &{auth_headers}=    Create Dictionary    Authorization=Bearer ${VALID_TOKEN}
@@ -267,13 +266,52 @@ CTC-009_API (API): Atualizar nome do perfil pela API com sucesso
 
     # Valida se o nome retornado DENTRO de 'data' é o NOVO nome enviado
     Should Be Equal As Strings    ${body['data']['name']}    ${novo_nome}
+    # Valida se outro campo email permaneceu inalterado
+    Should Be Equal As Strings    ${body['data']['email']}   ${fixture_user_data}[email]
 
-    # Valida se outros campos (email, role) permaneceram inalterados
+
+CTC-009_NEGATIVE_INVALID_NAME_API (API): Tentativa de atualizar perfil com nome vazio (API aceita mas não altera)
+    [Tags]    API    Negative    US-AUTH-004    CTC-009_NEGATIVE_INVALID_NAME    InvalidData    NonStrictValidation
+    [Documentation]
+    ...              Dado que estou autenticado com um token de usuário válido
+    ...              Quando envio uma requisição PUT para "/auth/profile" com 'name' vazio
+    ...              Então a resposta deve ter o status code 200 # API não rejeita
+    ...              E o corpo da resposta deve conter os dados do usuário com o nome *original* inalterado
+    # Reutiliza setup para ter usuário (${fixture_user_data}) e token válidos (${VALID_TOKEN})
+    [Setup]     Setup User And Get Valid Token
+
+    # --- SETUP INLINE (Preparação dos dados para a Ação) ---
+    # Define o payload com o nome VAZIO.
+    &{update_payload_invalid_name}=    Create Dictionary    name=${EMPTY}
+    # Monta os Headers com o token VÁLIDO obtido no Setup
+    &{auth_headers}=              Create Dictionary    Authorization=Bearer ${VALID_TOKEN}
+    # Guarda o nome ORIGINAL para validação posterior
+    ${fixture_user_data}=         Get Fixture From Collection   users    valid_user_register
+    ${original_name}=             Set Variable                  ${fixture_user_data}[name]
+    # --- FIM SETUP INLINE ---
+
+    # Envia a requisição PUT para tentar atualizar o perfil com nome inválido
+    ${response}=    Update User Profile    payload=${update_payload_invalid_name}    headers=${auth_headers}
+
+    # Valida se a API retornou 200 OK e se a estrutura da resposta está correta (schema de sucesso)
+    Validate Successful API Response
+    ...    response=${response}
+    ...    expected_status_code=200
+    ...    schema_file=update_profile_response.schema.json
+
+    # Extrai o corpo da resposta para validação de valor
+    ${body}=    Set Variable    ${response.json()}
+
+    # *** VALIDAÇÃO CRUCIAL ***
+    # Verifica se o nome retornado DENTRO de 'data' é o nome ORIGINAL, e NÃO o vazio
+    Should Be Equal As Strings    ${body['data']['name']}    ${original_name}    msg=API aceitou nome vazio, mas o nome retornado deveria ser o original!
+    Log    Verificado: Nome do usuário (${body['data']['name']}) permaneceu inalterado após tentativa de atualização com nome vazio.
+
+    # Opcional: Validar outros campos
+    Should Be Equal As Strings    ${body['data']['_id']}   ${user_id}
     Should Be Equal As Strings    ${body['data']['email']}   ${fixture_user_data}[email]
     Should Be Equal As Strings    ${body['data']['role']}    user
-
 *** Keywords ***
-
 Setup User And Get Valid Token
     [Documentation]    Garante que um usuário exista, faz login via API 
     ...                e armazena o token válido na variável de teste em $VALID_TOKEN.
