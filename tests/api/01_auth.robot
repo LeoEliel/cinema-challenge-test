@@ -89,3 +89,41 @@ CTC-003_API (API): Tentativa de registro com formato de e-mail inválido
     ...    expected_error_message=Validation failed
     ...    expected_errors_dict=${expected_errors_dict}
     ...    schema_file=register_invalid_email_error.schema.json
+
+CTC-004_API (API): Login com credenciais válidas pela API
+    [Tags]    API    Smoke    US-AUTH-002    CTC-004_API
+    [Documentation]
+    ...              Dado que eu tenho as credenciais de um usuário válido
+    ...              Quando eu envio uma requisição POST para o endpoint "/auth/login"
+    ...              Então a resposta deve ter o status code 200
+    ...              E o corpo da resposta deve conter um "accessToken"
+    # [Setup]     # REMOVIDO o [Setup] específico
+
+    # --- SETUP INLINE ---
+    # 1. Dado (Given) - Garante que o usuário para login exista
+    ${fixture}=    Get Fixture From Collection   users    valid_user_register
+    Set Test Variable        ${CLEANUP_EMAIL}     ${fixture}[email]
+    
+    # Pré-limpeza
+    Remove User And Related Data    ${fixture}[email] 
+
+    ${user_id}=    Insert User Directly Into DB    ${fixture}
+    
+    Should Not Be Equal    ${user_id}    ${None}    msg=Falha ao inserir usuário pré-requisito para login no DB
+    
+    Log    Usuário pré-requisito para login ${fixture}[email] inserido com ID ${user_id}
+    # --- FIM DO SETUP INLINE ---
+
+    # Monta o payload específico para login (apenas email e senha)
+    &{login_payload}=    Create Dictionary
+    ...    email=${fixture}[email]
+    ...    password=${fixture}[password]
+
+    # 2. Quando (When) - Envia a requisição de login
+    ${response}=    Login User   ${login_payload}
+
+    # 3. Então (Then) - Valida a resposta de sucesso
+    Validate Successful API Response
+    ...    response=${response}
+    ...    expected_status_code=200
+    ...    schema_file=login_success_response.schema.json
