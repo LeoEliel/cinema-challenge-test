@@ -199,37 +199,11 @@ CTC-008_API (API): Visualizar informações do perfil pela API com sucesso
     ...              Então a resposta deve ter o status code 200
     ...              E o corpo da resposta deve conter meu nome, e-mail e função (role) dentro do objeto 'data'
 
-    # --- SETUP INLINE ---
-    # Carrega os dados do usuário base do fixture
-    ${fixture_user_data}=    Get Fixture From Collection   users    valid_user_register
-    # Define o e-mail para ser limpo pelo Teardown padrão deste teste
-    Set Test Variable        ${CLEANUP_EMAIL}     ${fixture_user_data}[email]
-    # Garante um estado limpo removendo o usuário, caso exista
-    Remove User And Related Data    ${fixture_user_data}[email]
-    # Insere o usuário diretamente no banco de dados (alternativa: usar Register User via API)
-    ${user_id}=    Insert User Directly Into DB    ${fixture_user_data}
-    # Verifica se a inserção no banco foi bem-sucedida
-    Should Not Be Equal    ${user_id}    ${None}    msg=Falha ao inserir usuário pré-requisito no DB
-    # Log para registrar a criação
-    Log    Usuário pré-requisito ${fixture_user_data}[email] inserido com ID ${user_id}
 
-    # Prepara as credenciais para o login
-    &{login_credentials}=    Create Dictionary
-    ...    email=${fixture_user_data}[email]
-    ...    password=${fixture_user_data}[password]
-    # Realiza o login via API para obter um token válido
-    ${login_response}=    Login User    credentials=${login_credentials}
-    # Valida se o login foi bem-sucedido (importante para garantir que temos um token bom)
-    Validate Successful API Response    ${login_response}    200    login_success_response.schema.json
-
-    # Extrai o token da resposta de login
-    ${valid_token_for_test}=    Set Variable    ${login_response.json()}[data][token]
-    # Log para registrar o token obtido
-    Log    Token válido obtido para o teste: ${valid_token_for_test}
-    # --- FIM DO SETUP INLINE ---
+    [Setup]    Setup User And Get Valid Token
 
     # Monta o dicionário de Headers com o token VÁLIDO obtido no Setup Inline
-    &{auth_headers}=    Create Dictionary    Authorization=Bearer ${valid_token_for_test}
+    &{auth_headers}=    Create Dictionary    Authorization=Bearer ${VALID_TOKEN}
 
     # Envia a requisição GET para buscar o perfil usando a keyword do serviço de autenticação
     ${response}=    Get User Profile    headers=${auth_headers}
@@ -249,3 +223,100 @@ CTC-008_API (API): Visualizar informações do perfil pela API com sucesso
     Should Be Equal As Strings    ${body['data']['email']}     ${fixture_user_data}[email]
     # Assume que o usuário criado no setup tem a role 'user'
     Should Be Equal As Strings    ${body['data']['role']}      user
+
+CTC-009_API (API): Atualizar nome do perfil pela API com sucesso
+    [Tags]    API    Smoke    US-AUTH-004    CTC-009_API
+    [Documentation]
+    ...              Dado que estou autenticado com um token de usuário válido
+    ...              Quando envio uma requisição PUT para "/auth/profile" com um novo nome e senha atual
+    ...              Então a resposta deve ter o status code 200
+    ...              E o corpo da resposta deve conter os dados atualizados com o novo nome
+    
+    # --- SETUP INLINE (Preparação dos dados para a Ação) ---
+    # Reutiliza setup para ter usuário e token válidos (${VALID_TOKEN})
+    [Setup]     Setup User And Get Valid Token
+
+    # Gera um novo nome dinâmico para garantir a atualização
+    ${novo_nome}=        FakerLibrary.Name
+    # Pega a senha atual do fixture (a mesma usada para criar o usuário no Setup)
+    ${fixture_user_data}=  Get Fixture From Collection   users    valid_user_register
+    ${senha_atual}=        Set Variable              ${fixture_user_data}[password]
+
+    # Cria o payload para PUT /auth/profile
+    # Inclui o novo nome e a senha atual. Deixa newPassword vazio/nulo (ou omite, se a API permitir)
+    &{update_payload}=    Create Dictionary
+    ...    name=${novo_nome}
+    ...    currentPassword=${senha_atual}
+    # ...    newPassword=${None} # Ou omita esta linha se a API não exigir
+
+    # Monta os Headers com o token VÁLIDO obtido no Setup
+    &{auth_headers}=    Create Dictionary    Authorization=Bearer ${VALID_TOKEN}
+    # --- FIM SETUP INLINE ---
+
+    # Envia a requisição PUT para atualizar o perfil
+    ${response}=    Update User Profile    payload=${update_payload}    headers=${auth_headers}
+
+    # Valida se a API retornou sucesso (200 OK) e se a estrutura está correta
+    Validate Successful API Response
+    ...    response=${response}
+    ...    expected_status_code=200
+    ...    schema_file=update_profile_response.schema.json
+
+    # Extrai o corpo da resposta para validações de valor
+    ${body}=    Set Variable    ${response.json()}
+
+    # Valida se o nome retornado DENTRO de 'data' é o NOVO nome enviado
+    Should Be Equal As Strings    ${body['data']['name']}    ${novo_nome}
+
+    # Valida se outros campos (email, role) permaneceram inalterados
+    Should Be Equal As Strings    ${body['data']['email']}   ${fixture_user_data}[email]
+    Should Be Equal As Strings    ${body['data']['role']}    user
+
+*** Keywords ***
+
+Setup User And Get Valid Token
+    [Documentation]    Garante que um usuário exista, faz login via API 
+    ...                e armazena o token válido na variável de teste em $VALID_TOKEN.
+
+    #Cria a sessão sem passar pelo Setup padrão
+    Create Session    api    ${API_BASE_URL}
+
+    # Carrega os dados do usuário base do arquivo de fixtures JSON
+
+    ${fixture_user_data}=    Get Fixture From Collection   users    valid_user_register
+    Set Test Variable    ${fixture_user_data}
+    # Define o e-mail que será usado pelo Teardown padrão para limpar este usuário
+    Set Test Variable        ${CLEANUP_EMAIL}     ${fixture_user_data}[email]
+
+    # Garante um estado limpo removendo qualquer usuário preexistente com este e-mail
+    Remove User And Related Data    ${CLEANUP_EMAIL}
+
+    # Insere o usuário diretamente no banco de dados usando a keyword Python
+    ${user_id}=    Insert User Directly Into DB    ${fixture_user_data}
+    Set Test Variable    ${user_id}
+    # Verifica se a inserção no banco de dados realmente ocorreu
+    Should Not Be Equal    ${user_id}    ${None}    msg=Falha ao inserir usuário pré-requisito no DB
+
+    # Log para registrar a criação bem-sucedida do usuário
+    Log    Usuário pré-requisito ${fixture_user_data}[email] inserido com ID ${user_id}
+
+    # Prepara as credenciais (email e senha original) para fazer o login via API
+    &{login_credentials}=    Create Dictionary
+    ...    email=${fixture_user_data}[email]
+    ...    password=${fixture_user_data}[password]
+
+    # Realiza o login usando a keyword do serviço de autenticação para obter um token válido
+    ${login_response}=    Login User    credentials=${login_credentials}
+
+    # Valida se a resposta do login foi bem-sucedida (Status 200 e Schema correto)
+    Validate Successful API Response    ${login_response}    200    login_success_response.schema.json
+
+    # Extrai o token JWT ('accessToken') da resposta JSON do login
+    ${token}=    Set Variable    ${login_response.json()}[data][token]
+
+    # Armazena o token extraído em uma variável de TESTE (${VALID_TOKEN})
+    # Esta variável fica disponível para o Test Case que chamou este Setup
+    Set Test Variable    ${VALID_TOKEN}    ${token}
+
+    # Log para registrar o token válido que foi obtido
+    Log    Token válido obtido para o teste: ${VALID_TOKEN}
