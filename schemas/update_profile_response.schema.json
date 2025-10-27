@@ -1,0 +1,47 @@
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "description": "Indica sucesso na atualização do perfil",
+      "type": "boolean",
+      "const": true
+    },
+    "message":{
+      "description": "Mensagem de sucesso",
+      "type": "string",
+      "const": "Perfil atualizado com sucesso"
+    },
+    "data": {
+      "description": "Contém os dados atualizados do perfil do usuário",
+      "type": "object",
+      "properties": {
+        "_id": {
+          "description": "O ID único do usuário",
+          "type": "string"
+        },
+        "name": {
+          "description": "O nome atualizado do usuário",
+          "type": "string"
+        },
+        "email": {
+          "description": "O endereço de e-mail do usuário (inalterado)",
+          "type": "string",
+          "format": "email"
+        },
+        "role": {
+          "description": "A função do usuário (inalterada)",
+          "type": "string",
+          "enum": ["user", "admin"]
+        },
+        "token": {
+          "description": "Token de autenticação do usuário logado",
+          "type": "string"
+        }
+      },
+      "required": ["_id", "name", "email", "role", "token"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["success", "data"],
+  "additionalProperties": false
+}

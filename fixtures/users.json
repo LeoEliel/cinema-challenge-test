@@ -1,4 +1,16 @@
 {
+
+  "test_user_inserted": {
+    "name": "Test User",
+    "email": "test@example.com",
+    "password": "$2b$10$e7cGBTfwDwbqps.i8KZVbuvA3gsPBSm5ar5I6iMlv8Ud.MGupwfqe"
+  
+  },
+  "admin_user_inserted": {
+    "name": "Admin User",
+    "email": "admin@example.com",
+    "password": "password123"
+  },
   "valid_user_register": {
     "name": "Fixture User Register Static",
     "email": "fixture.user.static@test.cinema.com",

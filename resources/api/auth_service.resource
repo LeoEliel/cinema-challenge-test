@@ -38,6 +38,13 @@ Get User Profile
     ${response}=    GET From    /auth/me    ${headers}
     RETURN    ${response}
 
+Update User Profile
+    [Documentation]    Atualiza os dados do perfil do usuário autenticado (PUT /auth/profile).
+    [Arguments]    ${payload}    ${headers}
+
+    ${response}=    PUT To    /auth/profile    ${payload}    ${headers}
+    RETURN    ${response}
+
 # Refresh Auth Token
 #     [Documentation]    Renova o token de autenticação.
 #     [Arguments]        ${refresh_token}    ${headers}=&{EMPTY}
