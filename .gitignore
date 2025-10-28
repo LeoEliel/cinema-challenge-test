@@ -229,3 +229,6 @@ __marimo__/
 /results
 # CSV de importação dos casos de teste e user stories para o Jira
 jira_import.csv
+
+#Não pushar interactive_console_output.xml 
+interactive_console_output.xml
