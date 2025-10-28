@@ -1,0 +1,80 @@
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "description": "Indica se a busca foi bem-sucedida",
+      "type": "boolean",
+      "const": true
+    },
+    "count": {
+      "description": "Número total de filmes encontrados (independentemente da paginação)",
+      "type": "integer",
+      "minimum": 0
+    },
+    "pagination": {
+      "description": "Detalhes da paginação (pode estar vazio ou conter 'next')",
+      "type": "object",
+      "properties": {
+        "next": {
+          "description": "Informações sobre a próxima página (opcional)",
+          "type": "object",
+          "properties": {
+            "page": { "type": "integer", "minimum": 1 },
+            "limit": { "type": "integer", "minimum": 1 }
+          },
+          "required": ["page", "limit"],
+          "additionalProperties": false
+        }
+      },
+      
+      "additionalProperties": false
+    },
+    "data": {
+      "description": "Lista de filmes encontrados na página atual",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/movie" 
+      }
+    }
+  },
+  "required": ["success", "count", "pagination", "data"],
+  "additionalProperties": false,
+
+  "definitions": {
+    "movie": {
+      "description": "Objeto representando um filme",
+      "type": "object",
+      "properties": {
+        "_id": { "type": "string" },
+        
+        "title": { "type": "string" },
+        "synopsis": { "type": "string" },
+        "director": { "type": "string" },
+        "genres": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "duration": { "type": "integer" },
+        "classification": { "type": "string" },
+        "poster": { "type": "string" },
+        "releaseDate": { "type": "string", "format": "date-time" },
+        "id": { "type": "string" } 
+        
+      },
+      "required": [ 
+        "_id",
+        
+        "title",
+        "synopsis",
+        "director",
+        "genres",
+        "duration",
+        "classification",
+        "poster",
+        "releaseDate",
+        "id"
+      ],
+      "additionalProperties": false 
+    }
+  }
+}

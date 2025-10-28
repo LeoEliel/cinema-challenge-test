@@ -17,7 +17,7 @@ Variables    ../variables/env_vars.py
 # (Vamos adicionar mais arquivos aqui conforme criamos)
 Resource    api/auth_service.resource
 # Resource    api/users_service.resource
-# Resource    api/movies_service.resource
+Resource    api/movies_service.resource
 # Resource    api/theaters_service.resource
 # Resource    api/sessions_service.resource
 # Resource    api/reservations_service.resource
@@ -33,15 +33,6 @@ Resource    validation/api_validation.resource
 API Test Setup
     [Documentation]    Cria uma sessão de API para os testes
     Create Session    api    ${API_BASE_URL}
-
-
-API Test Teardown
-    [Arguments]        ${CLEANUP_EMAIL}=${None}
-    [Documentation]    Fecha a sessão de API
-    Run Keyword If   '${CLEANUP_EMAIL}' != '${None}'
-    ...    Remove User And Related Data    ${CLEANUP_EMAIL}
-    
-    Delete All Sessions
 
 #Keywords de Teste    
 UI Test Setup
@@ -68,55 +59,80 @@ Get Fixture From Collection
 
 POST To
     [Documentation]    Envia uma requisição POST para o endpoint especificado.
-    [Arguments]        ${endpoint}    ${payload}    ${headers}=&{EMPTY}
+    [Arguments]        ${endpoint}    ${json}    ${headers}=&{EMPTY}    ${params}=&{EMPTY}
     
-    ${response}=    Run Keyword If    ${headers}
-    ...    POST On Session    api    url=${endpoint}    json=${payload}    headers=${headers}    expected_status=any
-    ...    ELSE
-    ...    POST On Session    api    url=${endpoint}    json=${payload}    expected_status=any
-    
+    &{kwargs}    Setup Keyword Args For Generic Request    
+    ...    endpoint=${endpoint}    
+    ...    json=${json}    
+    ...    headers=${headers}    
+    ...    params=${params}
+
+    ${response}=    POST On Session    api    &{kwargs}
     RETURN    ${response}
 
 GET From
     [Documentation]    Envia uma requisição GET para o endpoint especificado.
-    [Arguments]        ${endpoint}    ${headers}=&{EMPTY}
+    [Arguments]        ${endpoint}    ${json}=&{EMPTY}    ${headers}=&{EMPTY}    ${params}=&{EMPTY}
     
-    ${response}=    Run Keyword If    ${headers}
-    ...    GET On Session    api    url=${endpoint}    headers=${headers}    expected_status=any
-    ...    ELSE
-    ...    GET On Session    api    url=${endpoint}    expected_status=any
-    
-    RETURN    ${response}
+    &{kwargs}    Setup Keyword Args For Generic Request    
+    ...    endpoint=${endpoint}
+    ...    headers=${headers}
+    ...    params=${params}
 
+    ${response}=    GET On Session    api    &{kwargs}
+    RETURN    ${response}
 PUT To
     [Documentation]    Envia uma requisição PUT para o endpoint especificado.
-    [Arguments]        ${endpoint}    ${payload}    ${headers}=&{EMPTY}
+    [Arguments]        ${endpoint}    ${json}    ${headers}=&{EMPTY}    ${params}=&{EMPTY}
     
-    ${response}=    Run Keyword If    ${headers}
-    ...    PUT On Session    api    url=${endpoint}    json=${payload}    headers=${headers}    expected_status=any
-    ...    ELSE
-    ...    PUT On Session    api    url=${endpoint}    json=${payload}    expected_status=any
+    &{kwargs}    Setup Keyword Args For Generic Request    
+    ...    endpoint=${endpoint}    
+    ...    json=${json}    
+    ...    headers=${headers}    
+    ...    params=${params}
     
+    ${response}=    PUT On Session    api    &{kwargs}
     RETURN    ${response}
+
 
 PATCH To
     [Documentation]    Envia uma requisição PATCH para o endpoint especificado.
-    [Arguments]        ${endpoint}    ${payload}    ${headers}=&{EMPTY}
+    [Arguments]        ${endpoint}    ${json}    ${headers}=&{EMPTY}    ${params}=&{EMPTY}
     
-    ${response}=    Run Keyword If    ${headers}
-    ...    PATCH On Session    api    url=${endpoint}    json=${payload}    headers=${headers}    expected_status=any
-    ...    ELSE
-    ...    PATCH On Session    api    url=${endpoint}    json=${payload}    expected_status=any
+    &{kwargs}    Setup Keyword Args For Generic Request    
+    ...    endpoint=${endpoint}    
+    ...    json=${json}    
+    ...    headers=${headers}    
+    ...    params=${params}
     
+    ${response}=    PATCH On Session    api    &{kwargs}
     RETURN    ${response}
 
 DELETE From
     [Documentation]    Envia uma requisição DELETE para o endpoint especificado.
-    [Arguments]        ${endpoint}    ${headers}=&{EMPTY}
+    [Arguments]        ${endpoint}    ${headers}=&{EMPTY}    ${params}=&{EMPTY}
     
-    ${response}=    Run Keyword If    ${headers}
-    ...    DELETE On Session    api    url=${endpoint}    headers=${headers}    expected_status=any
-    ...    ELSE
-    ...    DELETE On Session    api    url=${endpoint}    expected_status=any
+    &{kwargs}    Setup Keyword Args For Generic Request    
+    ...    endpoint=${endpoint}    
+    ...    headers=${headers}    
+    ...    params=${params}
     
+    ${response}=    DELETE On Session    api    &{kwargs}
     RETURN    ${response}
+
+Setup Keyword Args For Generic Request
+    [Documentation]    Keyword Genérica Para Preparar Keywords Arguments para lidar com variação de requests
+    [Arguments]        ${endpoint}    ${json}=&{EMPTY}    ${headers}=&{EMPTY}    ${params}=&{EMPTY}
+    
+    &{kwargs}=    Create Dictionary    url=${endpoint}    expected_status=any
+
+    Run Keyword If    ${headers}    Set To Dictionary    ${kwargs}    headers=${headers}
+    Log    Keyword Args After Headers: &{kwargs}
+
+    Run Keyword If    ${params}     Set To Dictionary    ${kwargs}    params=${params}
+    Log    Keyword Args After Params: &{kwargs}
+    
+    Run Keyword If    ${json}    Set To Dictionary    ${kwargs}    json=${json}
+    Log    Keyword Args After JSON: &{kwargs}
+
+    RETURN    &{kwargs}
