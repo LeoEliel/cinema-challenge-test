@@ -3,12 +3,13 @@ from pymongo import MongoClient, errors
 from bson.objectid import ObjectId
 import bcrypt
 import os
-
+import jwt
+from datetime import datetime, timedelta, timezone # <-- Para expiração para geração de tokens!
 
 # Configuração da Conexão
 MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/')
 MONGO_DB_NAME = os.environ.get('MONGO_DB_NAME', 'cinema-app')
-
+JWT_SECRET = os.environ.get('JWT_SECRET', 'seu_jwt_secret_aqui') # <-- Use variável de ambiente!
 
 # KEYWORDS DE GERENCIAMENTO DE CONEXÃO
 def _get_db_connection():
@@ -421,3 +422,37 @@ def get_reservation_id_by_user_and_session(user_id: str, session_id: str):
     except Exception as e:
         print(f"ERRO ao buscar reserva: {e}")
         return None
+
+@keyword("Generate Admin Token")
+def generate_admin_token(admin_email: str = "admin@example.com") -> str:
+    """
+    Busca o ID do admin pelo email e gera um token JWT válido para ele,
+    espelhando a lógica do backend (payload com 'id').
+    Retorna o token completo (incluindo 'Bearer ').
+    """
+    print(f"Gerando token de Admin para: {admin_email}")
+    if not JWT_SECRET or JWT_SECRET != 'seu_jwt_secret_aqui':
+         raise ValueError("ERRO: JWT_SECRET não está configurada corretamente!")
+
+    admin_id = get_user_id_by_email(admin_email) # Reutiliza sua keyword de busca
+    if not admin_id:
+        raise ValueError(f"Usuário admin com email {admin_email} não encontrado no banco.")
+
+    # Define o payload do token - APENAS com 'id'
+    payload = {
+        'id': admin_id, # <-- CORRIGIDO: Apenas o ID
+        # Adiciona expiração (ex: 1 hora) e iat (issued at) - Boas práticas
+        'exp': datetime.now(timezone.utc) + timedelta(hours=1),
+        'iat': datetime.now(timezone.utc)
+    }
+    print(f"Payload do token: {payload}")
+
+    try:
+        # Gera o token usando a chave secreta e HS256
+        token = jwt.encode(payload, JWT_SECRET, algorithm="HS256")
+        print(f"Token gerado com sucesso.")
+        return f"Bearer {token}"
+    except Exception as e:
+        print(f"ERRO ao gerar token JWT: {e}")
+        raise RuntimeError(f"Falha ao gerar token JWT: {e}")
+    
