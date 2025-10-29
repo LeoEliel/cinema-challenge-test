@@ -13,6 +13,7 @@ ${MOVIE_SCHEMA_LIST}         list_movies_response.schema.json
 ${MOVIE_SCHEMA_DETAIL}       get_movie_details_response.schema.json
 ${MOVIE_NOT_FOUND_SCHEMA}    movie_not_found_error.schema.json
 ${MOVIE_CREATE_SCHEMA}       create_movie_response.schema.json     # Nome do novo schema
+${MOVIE_UPDATE_SCHEMA}       update_movie_response.schema.json     # <-- NOVO SCHEMA
 ${NON_EXISTENT_MOVIE_ID}     111111111111111111111111     # Um ObjectId válido, mas garantido (esperamos) que não exista
 
 *** Test Cases ***
@@ -103,7 +104,7 @@ CTC-012_NEGATIVE_NOT_FOUND_API (API): Tentar buscar filme com ID inexistente
     ...    schema_file=${MOVIE_NOT_FOUND_SCHEMA}
 
 CTC-040_API (API): Admin cria novo filme com sucesso
-    [Tags]    API    Smoke    AdminOnly    MoviesCRUD    CTC-040_API
+    [Tags]    API    Smoke    AdminOnly    MoviesCRUD    CTC-040_API    CN-84
     [Documentation]
     ...              Dado que estou autenticado como Admin
     ...              E tenho um payload válido para um novo filme
@@ -159,3 +160,67 @@ CTC-040_API (API): Admin cria novo filme com sucesso
     Should Be Equal As Strings    ${body['data']['duration']}     ${movie_payload}[duration]
     Should Be Equal As Strings    ${body['data']['genres']}        ${movie_payload}[genres]
     # Adicione mais comparações de campos se desejar (synopsis, duration, genres...)
+
+CTC-041_API (API): Admin atualiza filme existente com sucesso
+    [Tags]    API    AdminOnly    MoviesCRUD    CTC-041_API    CN-85
+    [Documentation]
+    ...              Dado que estou autenticado como Admin e um filme existe
+    ...              Quando envio PUT para "/movies/{id}" com dados atualizados
+    ...              Então a resposta deve ter status 200 OK
+    ...              E o corpo da resposta deve conter os dados do filme atualizados
+    # [Setup] REMOVIDO
+
+    # --- SETUP INLINE ---
+    # 1. Gera Token de Admin
+    ${admin_fixture}=    Get Fixture From Collection    users    admin_user_inserted
+    ${admin_email}=      Set Variable                   ${admin_fixture}[email]
+    ${admin_id_check}=   Get User Id by Email           ${admin_email}
+    Should Not Be Equal    ${admin_id_check}    ${None}    msg=Usuário admin ${admin_email} não encontrado no DB.
+    ${admin_token_bearer}=    Generate Admin Token    admin_email=${admin_email}
+    Log    Token de Admin gerado para o teste: ${admin_token_bearer}
+    &{admin_headers}=         Create Dictionary    Authorization=${admin_token_bearer}
+
+    # 2. Cria Filme pré-requisito
+    ${fixture_movie_data}=    Get Fixture From Collection   movies    base_valid_movie
+    # Define variáveis para cleanup (lista e título)
+    Set Test Variable      @{MOVIE_ID_LIST}     @{EMPTY}
+    Set Test Variable      ${MOVIE_TITLE_TO_CLEAN}  ${fixture_movie_data}[title]
+    # Garante limpeza prévia
+    ${existing_id}=   Get Movie Id By Title    ${fixture_movie_data}[title]
+    Run Keyword If    '${existing_id}' != '${None}'    Remove Movie And Related Data    ${existing_id}
+    # Insere o filme via DB
+    ${movie_id_to_update}=    Insert Movie Directly Into DB    ${fixture_movie_data}
+    Should Not Be Equal    ${movie_id_to_update}    ${None}    msg=Falha ao inserir filme pré-requisito no DB
+    Log    Filme pré-requisito '${fixture_movie_data}[title]' inserido com ID ${movie_id_to_update}
+    # Adiciona o ID à lista para o Teardown padrão limpar
+    Append To List    ${MOVIE_ID_LIST}    ${movie_id_to_update}
+    Set Test Variable    @{MOVIE_ID_LIST}
+    # --- FIM SETUP INLINE ---
+
+    # --- PREPARAÇÃO DA AÇÃO ---
+    # Define o payload com os dados de ATUALIZAÇÃO
+    ${novo_titulo}=    FakerLibrary.Catch Phrase
+    ${nova_sinopse}=   FakerLibrary.Catch Phrase
+    &{update_payload}=    Create Dictionary
+    ...    title=${novo_titulo}
+    ...    synopsis=${nova_sinopse}
+    # --- FIM PREPARAÇÃO ---
+
+    # Ação: Chama a keyword (corrigida) do service
+    ${response}=    Update Movie
+    ...    movie_id=${movie_id_to_update}     # Usa o ID criado no Setup Inline
+    ...    payload=${update_payload}
+    ...    admin_headers=${admin_headers}
+
+    # Validação Principal: Status 200 e Schema
+    Validate Successful API Response
+    ...    response=${response}
+    ...    expected_status_code=200
+    ...    schema_file=${MOVIE_UPDATE_SCHEMA}
+
+    # Validação Extra: Verifica se os dados foram realmente atualizados
+    ${body}=    Set Variable    ${response.json()}
+    Should Be Equal As Strings    ${body['data']['title']}        ${novo_titulo}
+    Should Be Equal As Strings    ${body['data']['synopsis']}     ${nova_sinopse}
+    # Confirma que o ID não mudou
+    Should Be Equal As Strings    ${body['data']['_id']}          ${movie_id_to_update}
