@@ -8,59 +8,13 @@ Test Setup       API Test Setup
 Test Teardown    API Test Teardown For Movie Collection
 
 *** Variables ***
-#${MOVIE_SCHEMA_DETAIL_FILE}    get_movie_details_response.schema.json
+${MOVIE_FIXTURES}            ../../fixtures/movies.json
+${MOVIE_SCHEMA_LIST}         list_movies_response.schema.json
+${MOVIE_SCHEMA_DETAIL}       get_movie_details_response.schema.json
+${MOVIE_NOT_FOUND_SCHEMA}    movie_not_found_error.schema.json
+${NON_EXISTENT_MOVIE_ID}     111111111111111111111111     # Um ObjectId válido, mas garantido (esperamos) que não exista
 
 *** Test Cases ***
-# CTC-010_API (API): Listar filmes com sucesso (sem filtros)
-#     [Tags]    API    Smoke    US-MOVIE-001    CTC-010_API
-#     [Documentation]
-#     ...              Dado que existem filmes cadastrados
-#     ...              Quando envio uma requisição GET para "/movies"
-#     ...              Então a resposta deve ter o status code 200
-#     ...              E o corpo da resposta deve ser uma lista paginada de filmes
-        
-#     # Setup: Garante que há filmes cadastrados via API
-#     ${payload}    Get Fixture From Collection    movies    three_base_valid_movies
-
-#     Log    ${payload}
-
-#     Set Test Variable    ${id_movie}    ${EMPTY}
-    
-#     @{MOVIE_ID_LIST}    Create List
-#     Set Test Variable    @{MOVIE_ID_LIST}
-
-#     FOR    ${index}    ${element}    IN ENUMERATE    @{payload}        
-#         Log    Inserindo no DB >>> ${index}: ${element}
-#         ${id_movie}    Insert Movie Directly Into DB    ${element}
-#         Append To List    ${MOVIE_ID_LIST}    ${id_movie}    
-#     END
-    
-
-#     #Editar dict na keyword para adicionar e/ou retirar pares chave-valor
-#     ${QUERY_PARAMS}        Create Dictionary    
-#     ...              title=Fixture Movie Title Out Of Three With Duration: 100       #string    
-#     ...              genre=Three Movies Genre                                        #string
-#     ...              sort=duration                                                   #string
-#     ...              limit=3                                                         #integer
-#     ...              page=1                                                          #integer
-
-#     # Ação: Chama a keyword do movies_service
-#     ${response}=    List Movies    params=${QUERY_PARAMS}
-
-#     # Validação: Usa a keyword de validação e o schema correto
-#     Validate Successful API Response
-#     ...    response=${response}
-#     ...    expected_status_code=200
-#     ...    schema_file=list_movies_response.schema.json
-
-#     # Validação Extra: Verifica se a lista 'data' não está vazia (pois o Setup criou um filme)
-#     ${body}=    Set Variable    ${response.json()}
-    
-#     Should Not Be Empty    ${body['data']}    
-#     ...    msg=A lista de filmes retornada está vazia, mas o Setup deveria ter criado dados.
-    
-#     Log    Lista de filmes retornada com ${body['count']} itens no total.
-#     Evaluate   ${body['count']} == 3    
 
 CTC-010_API (API): Listar filmes com sucesso (filtrando pelos criados no teste)
     [Tags]    API    Smoke    US-MOVIE-001    CTC-010_API
@@ -125,3 +79,24 @@ CTC-012_API (API): Buscar detalhes de filme por ID com sucesso
     Should Be Equal As Strings    ${body['data']['_id']}          ${movie_id_to_get}     # Confirma o ID
     Should Be Equal As Strings    ${body['data']['title']}        ${fixture_movie_data}[title]
     Should Be Equal As Strings    ${body['data']['director']}     ${fixture_movie_data}[director]
+
+CTC-012_NEGATIVE_NOT_FOUND_API (API): Tentar buscar filme com ID inexistente
+    [Tags]    API    Negative    US-MOVIE-002    CTC-012_Negative
+    [Documentation]
+    ...              Dado que um ID de filme não existe no sistema
+    ...              Quando envio uma requisição GET para "/movies/{id_inexistente}"
+    ...              Então a resposta deve ter o status code 404
+    ...              E o corpo da resposta deve conter a mensagem "Movie not found"
+
+    # Sem filmes para apagar definiremos váriavel de lista de Id de Movies como vazia
+    @{MOVIE_ID_LIST}=    Create List
+    Set Test Variable    @{MOVIE_ID_LIST}
+
+    # Ação: Chama a keyword do movies_service usando um ID inexistente
+    ${response}=    Get Movie By ID    movie_id=${NON_EXISTENT_MOVIE_ID}
+
+    # Validação: Usa a keyword de validação de erro e o schema 404
+    Validate Error API Response
+    ...    response=${response}
+    ...    expected_status_code=404
+    ...    schema_file=${MOVIE_NOT_FOUND_SCHEMA}

@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "description": "Indica falha na busca (filme não encontrado)",
+      "type": "boolean",
+      "const": false
+    },
+    "message": {
+      "description": "Mensagem de erro indicando que o filme não foi encontrado",
+      "type": "string",
+      "const": "Movie not found"
+    }
+  },
+  "required": ["success", "message"],
+  "additionalProperties": false
+}
