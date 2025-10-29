@@ -28,11 +28,15 @@ Resource    api/movies_service.resource
 
 Resource    validation/api_validation.resource
 
+*** Variables ***
+
+${SESSION_ALIAS}        api
+
 *** Keywords ***
 #Keywords de Suite
 API Test Setup
     [Documentation]    Cria uma sessão de API para os testes
-    Create Session    api    ${API_BASE_URL}
+    Create Session    ${SESSION_ALIAS}    ${API_BASE_URL}
 
 #Keywords de Teste    
 UI Test Setup
@@ -67,7 +71,7 @@ POST To
     ...    headers=${headers}    
     ...    params=${params}
 
-    ${response}=    POST On Session    api    &{kwargs}
+    ${response}=    POST On Session    ${SESSION_ALIAS}    &{kwargs}
     RETURN    ${response}
 
 GET From
@@ -79,7 +83,7 @@ GET From
     ...    headers=${headers}
     ...    params=${params}
 
-    ${response}=    GET On Session    api    &{kwargs}
+    ${response}=    GET On Session    ${SESSION_ALIAS}    &{kwargs}
     RETURN    ${response}
 PUT To
     [Documentation]    Envia uma requisição PUT para o endpoint especificado.
@@ -91,7 +95,7 @@ PUT To
     ...    headers=${headers}    
     ...    params=${params}
     
-    ${response}=    PUT On Session    api    &{kwargs}
+    ${response}=    PUT On Session    ${SESSION_ALIAS}    &{kwargs}
     RETURN    ${response}
 
 
@@ -105,7 +109,7 @@ PATCH To
     ...    headers=${headers}    
     ...    params=${params}
     
-    ${response}=    PATCH On Session    api    &{kwargs}
+    ${response}=    PATCH On Session    ${SESSION_ALIAS}    &{kwargs}
     RETURN    ${response}
 
 DELETE From
@@ -117,7 +121,7 @@ DELETE From
     ...    headers=${headers}    
     ...    params=${params}
     
-    ${response}=    DELETE On Session    api    &{kwargs}
+    ${response}=    DELETE On Session    ${SESSION_ALIAS}    &{kwargs}
     RETURN    ${response}
 
 Setup Keyword Args For Generic Request
