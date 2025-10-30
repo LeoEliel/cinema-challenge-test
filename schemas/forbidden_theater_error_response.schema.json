@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "properties": {
+    "success": { "type": "boolean", "const": false },
+    "message": {
+      "description": "Mensagem mockada para falhar e descobrirmos a real",
+      "type": "string",
+      "const": "MENSAGEM_MOCKADA_ERRADA_PARA_DESCOBERTA"
+    }
+  },
+  "required": ["success", "message"],
+  "additionalProperties": false
+}

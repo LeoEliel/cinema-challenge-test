@@ -16,6 +16,7 @@ ${THEATER_SCHEMA_DETAIL}        get_theater_details_response.schema.json
 ${THEATER_NOT_FOUND_SCHEMA}     theater_not_found_error.schema.json
 ${THEATER_CREATE_SCHEMA}        create_theater_response.schema.json
 ${THEATER_UPDATE_SCHEMA}        update_theater_response.schema.json
+${THEATER_DELETE_SCHEMA}        delete_theater_response.schema.json
 
 ${NON_EXISTENT_THEATER_ID}      111111111111111111111111
 ${ADMIN_EMAIL_FIXTURE}          admin@example.com
@@ -240,6 +241,62 @@ CTC-28_API (API): Admin atualiza sala (Theater) existente com sucesso
     Should Be Equal As Strings    ${body['data']['name']}    ${novo_nome}
     # Valida que o ID permaneceu o mesmo
     Should Be Equal As Strings    ${body['data']['_id']}   ${theater_id_to_update}
+
+CTC-030_API (API): Deletar uma sala (Theater) existente com sucesso (requer Admin)
+    [Tags]    API    AdminOnly    TheatersCRUD    CTC-30_API    CN-75
+    [Documentation]
+    ...              Dado que estou autenticado como Admin e uma sala existe
+    ...              Quando envio DELETE para "/theaters/{id_da_sala}"
+    ...              Então a resposta deve ter status 200 OK (ou 204)
+    ...              E o filme não deve mais ser encontrado
+
+    # --- SETUP INLINE ---
+    # Gera o token de Admin
+    Generate Admin Token For Test
+    # Monta os headers com o token
+    &{admin_headers}=      Create Dictionary    Authorization=${ADMIN_TOKEN_BEARER}
+
+    # Carrega o fixture da sala base
+    ${fixture_payload}=    Get Fixture From Collection   theaters    base_valid_theater
+    # Garante limpeza prévia (caso tenha sobrado de outro teste)
+    Remove Theater And Related Data    ${fixture_payload}[name]
+
+    # Insere a sala que será o "alvo" da deleção
+    ${theater_id_to_delete}=    Insert Theater Directly Into DB    ${fixture_payload}
+    Should Not Be Equal    ${theater_id_to_delete}    ${None}    msg=Falha ao inserir sala pré-requisito no DB
+    Log    Sala alvo para deleção criada com ID: ${theater_id_to_delete}
+
+    # Prepara o Teardown para limpar esta sala (caso o DELETE falhe)
+    @{ids_to_clean}=       Create List    ${theater_id_to_delete}
+    Set Test Variable      @{THEATER_ID_LIST}    @{ids_to_clean}
+    # --- FIM SETUP INLINE ---
+
+    # Ação: Tenta deletar a sala
+    ${response}=    Delete Theater
+    ...    theater_id=${theater_id_to_delete}
+    ...    admin_headers=${admin_headers}
+
+    # --- VALIDAÇÃO (PARTE 1) - Tenta validar contra o MOCK ---
+    # Esperamos 200 OK (se 204, esta keyword falhará, o que também é informativo)
+    Validate Successful API Response
+    ...    response=${response}
+    ...    expected_status_code=200
+    ...    schema_file=${THEATER_DELETE_SCHEMA}
+
+    # --- VALIDAÇÃO (PARTE 2) - Se a Parte 1 passar, valida o 404 ---
+    Log    Validando se a sala ${theater_id_to_delete} foi realmente deletada...
+    ${response_after}=    Get Theater By ID    theater_id=${theater_id_to_delete}
+    Validate Error API Response
+    ...    response=${response_after}
+    ...    expected_status_code=404
+    ...    schema_file=${THEATER_NOT_FOUND_SCHEMA}
+
+    # --- LIMPEZA (OPCIONAL) ---
+    # Limpa a lista de Teardown, pois o DELETE já funcionou
+    @{empty_list}=    Create List
+    Set Test Variable    @{THEATER_ID_LIST}    @{empty_list}
+    Log    ID da sala removido da lista de cleanup do Teardown (deleção principal bem-sucedida).
+
 
 *** Keywords ***
 Setup Theaters For Test
