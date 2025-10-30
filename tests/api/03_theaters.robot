@@ -17,6 +17,7 @@ ${THEATER_NOT_FOUND_SCHEMA}     theater_not_found_error.schema.json
 ${THEATER_CREATE_SCHEMA}        create_theater_response.schema.json
 ${THEATER_UPDATE_SCHEMA}        update_theater_response.schema.json
 ${THEATER_DELETE_SCHEMA}        delete_theater_response.schema.json
+${FORBIDDEN_ERROR_SCHEMA}       forbidden_error_response.schema.json
 
 ${NON_EXISTENT_THEATER_ID}      111111111111111111111111
 ${ADMIN_EMAIL_FIXTURE}          admin@example.com
@@ -276,7 +277,6 @@ CTC-030_API (API): Deletar uma sala (Theater) existente com sucesso (requer Admi
     ...    theater_id=${theater_id_to_delete}
     ...    admin_headers=${admin_headers}
 
-    # --- VALIDAÇÃO (PARTE 1) - Tenta validar contra o MOCK ---
     # Esperamos 200 OK (se 204, esta keyword falhará, o que também é informativo)
     Validate Successful API Response
     ...    response=${response}
@@ -297,6 +297,92 @@ CTC-030_API (API): Deletar uma sala (Theater) existente com sucesso (requer Admi
     Set Test Variable    @{THEATER_ID_LIST}    @{empty_list}
     Log    ID da sala removido da lista de cleanup do Teardown (deleção principal bem-sucedida).
 
+CTC-030_NEGATIVE_FORBIDDEN_API (API): Tentar deletar uma sala (Theater) como usuário normal
+    [Tags]    API    Negative    AdminOnly    TheatersCRUD    CTC-043_Negative    CN-77
+    [Documentation]
+    ...              Dado que estou autenticado como usuário NORMAL e uma sala existe
+    ...              Quando envio DELETE para "/theaters/{id}" com token de usuário normal
+    ...              Então a resposta deve ter status 403 Forbidden
+    # [Setup] O setup padrão 'API Test Setup' é executado.
+
+    # --- SETUP INLINE ---
+    # 1. Cria um usuário normal e obtém seu token
+    # (Reutiliza a keyword global 'Setup User And Get Valid Token' de common.resource)
+    Setup User And Get Valid Token
+    # Armazena o token e o e-mail para cleanup (a keyword já define ${CLEANUP_EMAIL})
+    ${normal_user_token_bearer}=    Set Variable    ${VALID_TOKEN}
+    Log    Token de Usuário Normal obtido.
+
+    # 2. Cria uma sala (theater) para ser o alvo
+    ${fixture_payload}=    Get Fixture From Collection   theaters    base_valid_theater
+    ${random_suffix}=      FakerLibrary.Street Suffix
+    ${dynamic_name}=       Set Variable              ${fixture_payload}[name] - ${random_suffix}
+    ${payload_sala}=       Set To Dictionary         ${fixture_payload}    name=${dynamic_name}
+    ${theater_id_to_delete}=    Insert Theater Directly Into DB    ${payload_sala}
+    Should Not Be Equal    ${theater_id_to_delete}    ${None}    msg=Falha ao inserir sala pré-requisito no DB
+    Log    Sala alvo para deleção criada com ID: ${theater_id_to_delete}
+
+    # 3. Prepara o Teardown da Sala
+    @{ids_to_clean}=       Create List    ${theater_id_to_delete}
+    Set Test Variable      @{THEATER_ID_LIST}    @{ids_to_clean}
+
+    # 4. Monta os headers com o token de USUÁRIO NORMAL
+    &{normal_user_headers}=    Create Dictionary    Authorization=Bearer ${normal_user_token_bearer}
+    # --- FIM SETUP INLINE ---
+
+    # Ação: Tenta deletar a sala usando o token de usuário normal
+    ${response}=    Delete Theater
+    ...    theater_id=${theater_id_to_delete}
+    ...    admin_headers=${normal_user_headers}     # Passando o token normal
+
+    # --- LOG DE DESCOBERTA ---
+    # Loga a resposta real ANTES de tentar validar
+    Log To Console    \n\n--- RESPOSTA REAL (CTC-043_API 403) ---\nStatus: ${response.status_code}\nCorpo: ${response.text}\n--------------------------------------\n
+
+    # Validação (ESPERAMOS QUE FALHE AQUI E MOSTRE O ERRO REAL)
+    # Tenta validar contra o schema mockado
+    Validate Error API Response
+    ...    response=${response}
+    ...    expected_status_code=403
+    ...    schema_file=${FORBIDDEN_ERROR_SCHEMA}
+
+CTC-043_API (API): Tentar deletar sala como usuário normal (Forbidden)
+    [Tags]    API    Negative    AdminOnly    TheatersCRUD    CTC-043_Negative    CN-77
+    [Documentation]
+    ...              Dado que estou autenticado como usuário NORMAL e uma sala existe
+    ...              Quando envio DELETE para "/theaters/{id}" com token de usuário normal
+    ...              Então a resposta deve ter status 403 Forbidden
+    # Teardown EXPLÍCITO e DUPLO para este teste
+    [Teardown]    Run Keywords
+    ...           API Test Teardown For Theater Collection     # Limpa a sala
+    ...    AND    API Test Teardown For User Collection     # Limpa o usuário
+
+    # --- SETUP INLINE (Usuário) ---
+    # Chama a keyword global de common.resource para criar user e token
+    Setup User And Get Valid Token
+    ${normal_user_token_bearer}=    Set Variable    ${VALID_TOKEN}
+    # (Setup User... já define ${CLEANUP_EMAIL} para o teardown)
+    
+    # --- SETUP INLINE (Sala) ---
+    ${fixture_sala}=    Get Fixture From Collection   theaters    base_valid_theater
+    ${existing_id}=     Get Theater Id By Name        ${fixture_sala}[name]
+    Run Keyword If      '${existing_id}' != '${None}'  Remove Theater And Related Data    ${existing_id}
+    ${theater_id}=      Insert Theater Directly Into DB    ${fixture_sala}
+    Should Not Be Equal    ${theater_id}    ${None}
+    @{ids_to_clean}=    Create List    ${theater_id}
+    Set Test Variable    @{THEATER_ID_LIST}    @{ids_to_clean}
+    # --- FIM SETUP INLINE ---
+
+    &{normal_user_headers}=    Create Dictionary    Authorization=Bearer ${normal_user_token_bearer}
+
+    ${response}=    Delete Theater
+    ...    theater_id=${theater_id}
+    ...    admin_headers=${normal_user_headers}
+
+    Validate Error API Response
+    ...    response=${response}
+    ...    expected_status_code=403
+    ...    schema_file=${FORBIDDEN_ERROR_SCHEMA}
 
 *** Keywords ***
 Setup Theaters For Test
@@ -340,12 +426,15 @@ Setup Theaters For Test
 API Test Teardown For Theater Collection
     [Documentation]    Remove as salas cujos IDs estão na lista @{THEATER_ID_LIST}.
     ${list_exists}=    Run Keyword And Return Status    Variable Should Exist    @{THEATER_ID_LIST}
-    ${LEN_THEATER_ID_LIST}        Get Length    ${THEATER_ID_LIST}
-    Run Keyword If    ${list_exists} and @{THEATER_ID_LIST}    Log    Iniciando cleanup para ${LEN_THEATER_ID_LIST} salas...
+    IF    ${list_exists} and @{THEATER_ID_LIST}
+        ${LEN_THEATER_ID_LIST}=    Get Length    ${THEATER_ID_LIST}
+        Log    Iniciando cleanup para ${LEN_THEATER_ID_LIST} salas...
+    END
     IF    ${list_exists} and @{THEATER_ID_LIST}
         FOR    ${theater_id}    IN    @{THEATER_ID_LIST}
             Remove Theater And Related Data    ${theater_id}
         END
+        Log    Cleanup de salas finalizado.
     END
-    Run Keyword If    ${list_exists} and @{THEATER_ID_LIST}    Log    Cleanup de salas finalizado.
     Delete All Sessions
+
