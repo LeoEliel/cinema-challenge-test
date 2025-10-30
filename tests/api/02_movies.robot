@@ -16,6 +16,7 @@ ${MOVIE_CREATE_SCHEMA}       create_movie_response.schema.json
 ${MOVIE_UPDATE_SCHEMA}       update_movie_response.schema.json
 ${MOVIE_DELETE_SCHEMA}       delete_movie_response.schema.json
 ${FORBIDDEN_ERROR_SCHEMA}    forbidden_error_response.schema.json
+${UNAUTHORIZED_ERROR_SCHEMA}     unauthorized_error_response.schema.json     # Schema do erro 401
 ${ADMIN_EMAIL_FIXTURE}       admin@example.com
 ${NON_EXISTENT_MOVIE_ID}     111111111111111111111111     # Um ObjectId válido, mas garantido (esperamos) que não exista
 
@@ -343,3 +344,35 @@ CTC-043_API (API): Tentar deletar filme como usuário normal (Forbidden)
     ...    API Test Teardown For User Collection
     ...  AND
     ...    API Test Teardown For Movie Collection
+
+CTC-044_API (API): Tentar deletar filme sem autenticação (Unauthorized)
+    [Tags]    API    Negative    Security    MoviesCRUD    CTC-044_Negative # Adicione ID Jira
+    [Documentation]
+    ...              Dado que um filme existe
+    ...              Quando envio DELETE para "/movies/{id}" sem token
+    ...              Então a resposta deve ter status 401 Unauthorized
+    # Setup: Cria um filme para termos um ID válido para tentar deletar
+    [Setup]    Run Keywords
+    ...    API Test Setup
+    ...    AND
+    ...    Setup Movies For Test    base_valid_movie
+
+    # Dado (Given) - Filme existe (criado no Setup - ${MOVIE_ID_LIST})
+    Should Not Be Empty    ${MOVIE_ID_LIST}    msg=ID do filme não foi criado no Setup.
+    Log    Filme alvo para tentativa de DELETE (sem token): ${MOVIE_ID_LIST}
+
+    # Ação: Tenta deletar o filme SEM passar o header 'admin_headers'
+    # A keyword 'Delete Movie' deve aceitar ${admin_headers}=${None} ou ${EMPTY}
+    ${response}=    Delete Movie
+    ...    movie_id=${MOVIE_ID_LIST}
+    ...    admin_headers=${None}     # Envia headers vazios
+
+    # Validação: Usa a keyword de validação de erro e o schema 401
+    Validate Error API Response
+    ...    response=${response}
+    ...    expected_status_code=401
+    ...    schema_file=${UNAUTHORIZED_ERROR_SCHEMA}
+
+    # [Teardown]: O Teardown padrão ('API Test Teardown For Movie Collection')
+    # rodará e limpará o filme que foi criado no [Setup]
+    # (pois o Setup definiu a @{MOVIE_ID_LIST})

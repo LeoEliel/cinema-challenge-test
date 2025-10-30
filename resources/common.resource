@@ -125,6 +125,17 @@ DELETE From
     ${response}=    DELETE On Session    ${SESSION_ALIAS}    &{kwargs}
     RETURN    ${response}
 
+DELETE With Empty Headers From
+    [Documentation]    Envia uma requisição DELETE para o endpoint especificado.
+    [Arguments]        ${endpoint}    ${params}=&{EMPTY}
+    
+    &{kwargs}    Setup Keyword Args For Generic Request    
+    ...    endpoint=${endpoint}    
+    ...    params=${params}
+    
+    ${response}=    DELETE On Session    ${SESSION_ALIAS}    &{kwargs}
+    RETURN    ${response}
+
 Setup Keyword Args For Generic Request
     [Documentation]    Keyword Genérica Para Preparar Keywords Arguments para lidar com variação de requests
     [Arguments]        ${endpoint}    ${json}=&{EMPTY}    ${headers}=&{EMPTY}    ${params}=&{EMPTY}
