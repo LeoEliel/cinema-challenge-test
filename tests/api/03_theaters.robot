@@ -338,7 +338,7 @@ CTC-030_NEGATIVE_FORBIDDEN_API (API): Tentar deletar uma sala (Theater) como usu
 
     # --- LOG DE DESCOBERTA ---
     # Loga a resposta real ANTES de tentar validar
-    Log To Console    \n\n--- RESPOSTA REAL (CTC-043_API 403) ---\nStatus: ${response.status_code}\nCorpo: ${response.text}\n--------------------------------------\n
+    #Log To Console    \n\n--- RESPOSTA REAL (CTC-043_API 403) ---\nStatus: ${response.status_code}\nCorpo: ${response.text}\n--------------------------------------\n
 
     # Validação (ESPERAMOS QUE FALHE AQUI E MOSTRE O ERRO REAL)
     # Tenta validar contra o schema mockado
@@ -451,6 +451,45 @@ CTC-030_NEGATIVE_NOT_FOUND_API (API): Admin tenta deletar sala com ID inexistent
     ...    response=${response}
     ...    expected_status_code=404
     ...    schema_file=${THEATER_NOT_FOUND_SCHEMA}
+
+CN-52 (API): Tentar criar uma nova sala (Theater) como usuário normal
+    [Tags]    API    Negative    AdminOnly    TheatersCRUD    CTC-026_Negative    CN-52
+    [Documentation]
+    ...              Dado que estou autenticado com um token de usuário normal (não-Admin)
+    ...              Quando envio uma requisição POST para o endpoint "/theaters" com dados de uma nova sala
+    ...              Então a resposta deve ter o status code 403
+    ...              E o corpo da resposta deve conter a mensagem "User role user is not authorized to access this route"
+    # Setup: Cria um usuário normal e obtém seu token (${VALID_TOKEN})
+    # Esta keyword (de common.resource) também define ${CLEANUP_EMAIL} para o teardown
+    [Setup]    Setup User And Get Valid Token
+
+    # Cria uma lista vazia para a variável de teardown @{THEATER_ID_LIST}
+    # (Necessário para o 'Test Teardown' padrão desta suíte rodar sem erros)
+    @{EMPTY_LIST}=    Create List
+    Set Test Variable    @{THEATER_ID_LIST}    @{EMPTY_LIST}
+
+    # --- PREPARAÇÃO DA AÇÃO ---
+    # Carrega o payload base da sala do fixture
+    ${fixture_payload}=    Get Fixture From Collection   theaters    base_valid_theater
+    # Monta os headers com o token de USUÁRIO NORMAL obtido no Setup
+    &{normal_user_headers}=    Create Dictionary    Authorization=Bearer ${VALID_TOKEN}
+    # --- FIM PREPARAÇÃO ---
+
+    # Ação: Tenta criar a sala usando o token de usuário normal
+    ${response}=    Create Theater
+    ...    payload=${fixture_payload}
+    ...    admin_headers=${normal_user_headers}     # Passando o token normal
+
+    # Validação: Usa a keyword de validação de erro e o schema 403
+    Validate Error API Response
+    ...    response=${response}
+    ...    expected_status_code=403
+    ...    schema_file=${FORBIDDEN_ERROR_SCHEMA}     # Reutiliza o schema de 403
+    #Log To Console    \n\n--- RESPOSTA REAL (CTC-043_API 403) ---\nStatus: ${response.status_code}\nCorpo: ${response.text}\n--------------------------------------\n
+    
+    # [Teardown] O Teardown padrão ('Run Keywords ... AND ...') rodará:
+    # 1. Cleanup Theaters... (encontrará lista vazia, pulará)
+    # 2. Cleanup User... (encontrará ${CLEANUP_EMAIL} do setup, limpará o usuário)
 
 *** Keywords ***
 Setup Theaters For Test
