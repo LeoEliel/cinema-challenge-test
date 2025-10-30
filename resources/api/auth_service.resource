@@ -57,21 +57,20 @@ Setup User And Get Valid Token
     
     Set Test Variable    ${fixture_user_data}
     # Define o e-mail que será usado pelo Teardown padrão para limpar este usuário
-    
-    Set Test Variable        ${MOVIE_ID_LIST}     ${fixture_user_data}[email]
+    Set Test Variable        ${USER_EMAIL}     ${fixture_user_data}[email]
     # Garante um estado limpo removendo qualquer usuário preexistente com este e-mail
     
-    Remove User And Related Data    ${MOVIE_ID_LIST}
+    Remove User And Related Data    ${USER_EMAIL}
     # Insere o usuário diretamente no banco de dados usando a keyword Python
     
-    ${user_id}=    Insert User Directly Into DB    ${fixture_user_data}
-    Set Test Variable    ${user_id}
+    ${USER_ID}=    Insert User Directly Into DB    ${fixture_user_data}
+    Set Test Variable    ${USER_ID}
     
     # Verifica se a inserção no banco de dados realmente ocorreu
-    Should Not Be Equal    ${user_id}    ${EMPTY}    msg=Falha ao inserir usuário pré-requisito no DB
+    Should Not Be Equal    ${USER_ID}    ${EMPTY}    msg=Falha ao inserir usuário pré-requisito no DB
 
     # Log para registrar a criação bem-sucedida do usuário
-    Log    Usuário pré-requisito ${fixture_user_data}[email] inserido com ID ${user_id}
+    Log    Usuário pré-requisito ${USER_EMAIL} inserido com ID ${USER_ID}
 
     # Prepara as credenciais (email e senha original) para fazer o login via API
     &{login_credentials}=    Create Dictionary
@@ -97,9 +96,8 @@ Setup User And Get Valid Token
 # TEARDOWN KEYWORDS ESPECÍFICAS PARA AUTENTICAÇÃO
 
 API Test Teardown For User Collection
-    [Arguments]        ${CLEANUP_EMAIL}=${EMPTY}
     [Documentation]    Fecha a sessão de API e remove dados de usuário
-    Run Keyword If   '${MOVIE_ID_LIST}' != '${EMPTY}'
-    ...    Remove User And Related Data    ${MOVIE_ID_LIST}
+    Run Keyword If   '${USER_EMAIL}' != '${EMPTY}'
+    ...    Remove User And Related Data    ${USER_EMAIL}
     
     Delete All Sessions

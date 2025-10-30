@@ -15,6 +15,7 @@ ${MOVIE_NOT_FOUND_SCHEMA}    movie_not_found_error.schema.json
 ${MOVIE_CREATE_SCHEMA}       create_movie_response.schema.json
 ${MOVIE_UPDATE_SCHEMA}       update_movie_response.schema.json
 ${MOVIE_DELETE_SCHEMA}       delete_movie_response.schema.json
+${FORBIDDEN_ERROR_SCHEMA}    forbidden_error_response.schema.json
 ${ADMIN_EMAIL_FIXTURE}       admin@example.com
 ${NON_EXISTENT_MOVIE_ID}     111111111111111111111111     # Um ObjectId válido, mas garantido (esperamos) que não exista
 
@@ -306,3 +307,39 @@ CTC-042_NEGATIVE_NOT_FOUND_API (API): Admin tenta deletar filme com ID inexisten
     ...    response=${response}
     ...    expected_status_code=404
     ...    schema_file=${MOVIE_NOT_FOUND_SCHEMA}     # Valida a estrutura E a mensagem via schema
+
+CTC-043_API (API): Tentar deletar filme como usuário normal (Forbidden)
+    [Tags]    API    Negative    AdminOnly    MoviesCRUD    CTC-043_Negative # Adicione ID Jira
+    [Documentation]
+    ...              Dado que estou autenticado como usuário NORMAL e um filme existe
+    ...              Quando envio DELETE para "/movies/{id}" com token de usuário normal
+    ...              Então a resposta deve ter status 403 Forbidden
+    
+    [Setup]
+        Run Keywords
+        ...    API Test Setup
+        ...  AND
+        ...    Setup User And Get Valid Token
+        ...  AND
+        ...  Setup Movies For Test    base_valid_movie 
+    
+    # Monta headers com o token de USUÁRIO NORMAL (obtido do setup)
+    &{normal_user_headers}=    Create Dictionary    Authorization=Bearer ${VALID_TOKEN}
+
+    # Ação: Tenta deletar o filme usando o token de usuário normal
+    ${response}=    Delete Movie
+    ...    movie_id=${MOVIE_ID_LIST}
+    ...    admin_headers=${normal_user_headers}     # Passando o token normal
+
+    # Validação (ESPERAMOS QUE FALHE AQUI E MOSTRE O ERRO REAL)
+    # Tenta validar contra o schema mockado
+    Validate Error API Response
+    ...    response=${response}
+    ...    expected_status_code=403
+    ...    schema_file=${FORBIDDEN_ERROR_SCHEMA}
+    
+    [Teardown]
+    Run Keywords
+    ...    API Test Teardown For User Collection
+    ...  AND
+    ...    API Test Teardown For Movie Collection

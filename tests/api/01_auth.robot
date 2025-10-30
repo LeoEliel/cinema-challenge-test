@@ -53,7 +53,7 @@ CTC-002_API (API): Tentativa de registro com e-mail já existente
     Set Test Variable    ${MOVIE_ID_LIST}    ${fixture}[email]
     Remove User And Related Data    ${MOVIE_ID_LIST}
     ${user_id}        Insert User Directly Into DB    ${fixture}
-    Should Not Be Equal    ${user_id}    ${EMPTY}
+    Should Not Be Equal    ${USER_ID}    ${EMPTY}
 
     # 2. Quando (When) - Tenta registrar novamente com o mesmo email
     ${response}=    Register User    ${fixture}
@@ -109,9 +109,9 @@ CTC-004_API (API): Login com credenciais válidas pela API
 
     ${user_id}=    Insert User Directly Into DB    ${fixture}
     
-    Should Not Be Equal    ${user_id}    ${EMPTY}    msg=Falha ao inserir usuário pré-requisito para login no DB
+    Should Not Be Equal    ${USER_ID}    ${EMPTY}    msg=Falha ao inserir usuário pré-requisito para login no DB
     
-    Log    Usuário pré-requisito para login ${fixture}[email] inserido com ID ${user_id}
+    Log    Usuário pré-requisito para login ${fixture}[email] inserido com ID ${USER_ID}
     # --- FIM DO SETUP INLINE ---
 
     # Monta o payload específico para login (apenas email e senha)
@@ -146,9 +146,9 @@ CTC-005_API (API): Tentativa de login com credenciais inválidas pela API
     # Insere o usuário de teste diretamente no banco de dados
     ${user_id}=    Insert User Directly Into DB    ${fixture_user_data}
     # Verifica se a inserção no banco de dados foi bem-sucedida
-    Should Not Be Equal    ${user_id}    ${EMPTY}    msg=Falha ao inserir usuário pré-requisito para teste de login inválido no DB
+    Should Not Be Equal    ${USER_ID}    ${EMPTY}    msg=Falha ao inserir usuário pré-requisito para teste de login inválido no DB
     # Log para registrar a criação do usuário de pré-requisito
-    Log    Usuário pré-requisito ${fixture_user_data}[email] inserido com ID ${user_id}
+    Log    Usuário pré-requisito ${fixture_user_data}[email] inserido com ID ${USER_ID}
     # --- FIM DO SETUP INLINE ---
 
     # Monta o payload (credenciais) para a tentativa de login usando o e-mail correto e uma senha inválida
@@ -218,7 +218,7 @@ CTC-008_API (API): Visualizar informações do perfil pela API com sucesso
     ${body}=    Set Variable    ${response.json()}
 
     # Valida se os valores retornados dentro do objeto 'data' correspondem aos dados do usuário criado
-    Should Be Equal As Strings    ${body['data']['_id']}      ${user_id}
+    Should Be Equal As Strings    ${body['data']['_id']}      ${USER_ID}
     Should Be Equal As Strings    ${body['data']['name']}      ${fixture_user_data}[name]
     Should Be Equal As Strings    ${body['data']['email']}     ${fixture_user_data}[email]
     # Assume que o usuário criado no setup tem a role 'user'
@@ -308,7 +308,7 @@ CTC-009_NEGATIVE_INVALID_NAME_API (API): Tentativa de atualizar perfil com nome 
     Log    Verificado: Nome do usuário (${body['data']['name']}) permaneceu inalterado após tentativa de atualização com nome vazio.
 
     # Opcional: Validar outros campos
-    Should Be Equal As Strings    ${body['data']['_id']}   ${user_id}
+    Should Be Equal As Strings    ${body['data']['_id']}   ${USER_ID}
     Should Be Equal As Strings    ${body['data']['email']}   ${fixture_user_data}[email]
     Should Be Equal As Strings    ${body['data']['role']}    user
 
