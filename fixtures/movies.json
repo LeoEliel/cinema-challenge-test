@@ -9,6 +9,38 @@
     "poster": "static_poster.jpg",
     "releaseDate": "2025-10-01T00:00:00.000Z"
   },
+  "three_base_valid_movies": [
+    {
+      "title": "The First Fixture Movie Title Out Of Three With Duration: 100",
+      "synopsis": "Synopsis for the static fixture movie.",
+      "director": "Fixture Director Static",
+      "genres": ["Fixture", "Static", "Three Movies Genre"],
+      "duration": 100,
+      "classification": "PG",
+      "poster": "static_poster.jpg",
+      "releaseDate": "2025-10-01T00:00:00.000Z"
+    },
+    {
+      "title": "The Second Fixture Movie Title Out Of Three With Duration: 100",
+      "synopsis": "Synopsis for the static fixture movie.",
+      "director": "Fixture Director Static",
+      "genres": ["Fixture", "Static", "Three Movies Genre"],
+      "duration": 100,
+      "classification": "PG",
+      "poster": "static_poster.jpg",
+      "releaseDate": "2025-10-01T00:00:00.000Z"
+    },
+    {
+      "title": "The Third Fixture Movie Title Out Of Three With Duration: 100",
+      "synopsis": "Synopsis for the static fixture movie.",
+      "director": "Fixture Director Static",
+      "genres": ["Fixture", "Static", "Three Movies Genre"],
+      "duration": 100,
+      "classification": "PG",
+      "poster": "static_poster.jpg",
+      "releaseDate": "2025-10-01T00:00:00.000Z"
+    }
+  ],
   "movie_missing_title": {
     "synopsis": "Movie missing title static.",
     "director": "Fixture Director Static",

@@ -1,0 +1,47 @@
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "description": "Indica se a atualização do filme foi bem-sucedida",
+      "type": "boolean",
+      "const": true
+    },
+    "data": {
+      "description": "Contém os dados do filme atualizado",
+      "type": "object",
+      "properties": {
+        "_id": { "type": "string" },
+        "title": { "type": "string" },
+        "synopsis": { "type": "string" },
+        "director": { "type": "string" },
+        "genres": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "duration": { "type": "integer" },
+        "classification": { "type": "string" },
+        "poster": { "type": "string" },
+        "releaseDate": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "id": { "type": "string" }
+      },
+      "required": [
+        "_id",
+        "title",
+        "synopsis",
+        "director",
+        "genres",
+        "duration",
+        "classification",
+        "poster",
+        "releaseDate",
+        "createdAt",
+        "updatedAt",
+        "id"
+      ],
+      "additionalProperties": true
+    }
+  },
+  "required": ["success", "data"],
+  "additionalProperties": false
+}

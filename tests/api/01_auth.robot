@@ -6,7 +6,7 @@ Documentation    Suíte de testes de API para a feature de Autenticação.
 Resource    ../../resources/common.resource 
 
 Test Setup       API Test Setup
-Test Teardown     API Test Teardown    ${CLEANUP_EMAIL}
+Test Teardown     API Test Teardown For User Collection    ${MOVIE_ID_LIST}
 
 *** Test Cases ***
 CTC-001_API (API): Registro de novo usuário com sucesso pela API
@@ -20,10 +20,10 @@ CTC-001_API (API): Registro de novo usuário com sucesso pela API
     ${fixture}        Get Fixture From Collection   users    valid_user_register
     ${endpoint}            Set Variable    /auth/register
     
-    Set Test Variable    ${CLEANUP_EMAIL}    ${fixture}[email]
+    Set Test Variable    ${MOVIE_ID_LIST}    ${fixture}[email]
     
     # Garante que usuário a ser inserido não existe
-    Remove User And Related Data    ${CLEANUP_EMAIL}
+    Remove User And Related Data    ${MOVIE_ID_LIST}
 
     # 3. Registra o usuário
     ${response}    Register User    ${fixture}
@@ -50,10 +50,10 @@ CTC-002_API (API): Tentativa de registro com e-mail já existente
     ${fixture}        Get Fixture From Collection   users    user_for_duplicate_email_test
     
     # 1. Dado (Given) - Usuário duplicado existe (feito abaixo Setup)
-    Set Test Variable    ${CLEANUP_EMAIL}    ${fixture}[email]
-    Remove User And Related Data    ${CLEANUP_EMAIL}
+    Set Test Variable    ${MOVIE_ID_LIST}    ${fixture}[email]
+    Remove User And Related Data    ${MOVIE_ID_LIST}
     ${user_id}        Insert User Directly Into DB    ${fixture}
-    Should Not Be Equal    ${user_id}    ${None}
+    Should Not Be Equal    ${USER_ID}    ${EMPTY}
 
     # 2. Quando (When) - Tenta registrar novamente com o mesmo email
     ${response}=    Register User    ${fixture}
@@ -75,7 +75,7 @@ CTC-003_API (API): Tentativa de registro com formato de e-mail inválido
     # 1. Dado (Given) - Carrega os dados do fixture com email inválido
     ${fixture}        Get Fixture From Collection   users    user_with_invalid_email_format
 
-    Set Test Variable    ${CLEANUP_EMAIL}    ${None}
+    Set Test Variable    ${MOVIE_ID_LIST}    ${EMPTY}
 
     # 2. Quando (When) - Tenta registrar com o payload inválido
     ${response}=    Register User    ${fixture}
@@ -102,16 +102,16 @@ CTC-004_API (API): Login com credenciais válidas pela API
     # --- SETUP INLINE ---
     # 1. Dado (Given) - Garante que o usuário para login exista
     ${fixture}=    Get Fixture From Collection   users    valid_user_register
-    Set Test Variable        ${CLEANUP_EMAIL}     ${fixture}[email]
+    Set Test Variable        ${MOVIE_ID_LIST}     ${fixture}[email]
     
     # Pré-limpeza
     Remove User And Related Data    ${fixture}[email] 
 
     ${user_id}=    Insert User Directly Into DB    ${fixture}
     
-    Should Not Be Equal    ${user_id}    ${None}    msg=Falha ao inserir usuário pré-requisito para login no DB
+    Should Not Be Equal    ${USER_ID}    ${EMPTY}    msg=Falha ao inserir usuário pré-requisito para login no DB
     
-    Log    Usuário pré-requisito para login ${fixture}[email] inserido com ID ${user_id}
+    Log    Usuário pré-requisito para login ${fixture}[email] inserido com ID ${USER_ID}
     # --- FIM DO SETUP INLINE ---
 
     # Monta o payload específico para login (apenas email e senha)
@@ -140,15 +140,15 @@ CTC-005_API (API): Tentativa de login com credenciais inválidas pela API
     # Carrega os dados do fixture que será usado como base (usuário válido)
     ${fixture_user_data}=    Get Fixture From Collection   users    valid_user_register
     # Define o e-mail que será limpo pelo Teardown padrão
-    Set Test Variable        ${CLEANUP_EMAIL}     ${fixture_user_data}[email]
+    Set Test Variable        ${MOVIE_ID_LIST}     ${fixture_user_data}[email]
     # Garante que o usuário de teste exista, limpando qualquer versão anterior
     Remove User And Related Data    ${fixture_user_data}[email]
     # Insere o usuário de teste diretamente no banco de dados
     ${user_id}=    Insert User Directly Into DB    ${fixture_user_data}
     # Verifica se a inserção no banco de dados foi bem-sucedida
-    Should Not Be Equal    ${user_id}    ${None}    msg=Falha ao inserir usuário pré-requisito para teste de login inválido no DB
+    Should Not Be Equal    ${USER_ID}    ${EMPTY}    msg=Falha ao inserir usuário pré-requisito para teste de login inválido no DB
     # Log para registrar a criação do usuário de pré-requisito
-    Log    Usuário pré-requisito ${fixture_user_data}[email] inserido com ID ${user_id}
+    Log    Usuário pré-requisito ${fixture_user_data}[email] inserido com ID ${USER_ID}
     # --- FIM DO SETUP INLINE ---
 
     # Monta o payload (credenciais) para a tentativa de login usando o e-mail correto e uma senha inválida
@@ -203,10 +203,10 @@ CTC-008_API (API): Visualizar informações do perfil pela API com sucesso
     [Setup]    Setup User And Get Valid Token
 
     # Monta o dicionário de Headers com o token VÁLIDO obtido no Setup Inline
-    &{auth_headers}=    Create Dictionary    Authorization=Bearer ${VALID_TOKEN}
+    &{headers}=    Create Dictionary    Authorization=Bearer ${VALID_TOKEN}
 
     # Envia a requisição GET para buscar o perfil usando a keyword do serviço de autenticação
-    ${response}=    Get User Profile    headers=${auth_headers}
+    ${response}=    Get User Profile    headers=${headers}
 
     # Valida se a API retornou sucesso (200 OK) e se a estrutura da resposta está correta
     Validate Successful API Response
@@ -218,7 +218,7 @@ CTC-008_API (API): Visualizar informações do perfil pela API com sucesso
     ${body}=    Set Variable    ${response.json()}
 
     # Valida se os valores retornados dentro do objeto 'data' correspondem aos dados do usuário criado
-    Should Be Equal As Strings    ${body['data']['_id']}      ${user_id}
+    Should Be Equal As Strings    ${body['data']['_id']}      ${USER_ID}
     Should Be Equal As Strings    ${body['data']['name']}      ${fixture_user_data}[name]
     Should Be Equal As Strings    ${body['data']['email']}     ${fixture_user_data}[email]
     # Assume que o usuário criado no setup tem a role 'user'
@@ -308,7 +308,7 @@ CTC-009_NEGATIVE_INVALID_NAME_API (API): Tentativa de atualizar perfil com nome 
     Log    Verificado: Nome do usuário (${body['data']['name']}) permaneceu inalterado após tentativa de atualização com nome vazio.
 
     # Opcional: Validar outros campos
-    Should Be Equal As Strings    ${body['data']['_id']}   ${user_id}
+    Should Be Equal As Strings    ${body['data']['_id']}   ${USER_ID}
     Should Be Equal As Strings    ${body['data']['email']}   ${fixture_user_data}[email]
     Should Be Equal As Strings    ${body['data']['role']}    user
 
@@ -365,51 +365,3 @@ CTC-009_NEGATIVE_FORBIDDEN_FIELD_API (API): Tentativa de atualizar campos proibi
 
     # Valida se o campo permitido ('name') FOI atualizado corretamente
     Should Be Equal As Strings    ${body['data']['name']}     ${nome_permitido}    msg=O campo 'name' permitido não foi atualizado como esperado.
-
-*** Keywords ***
-Setup User And Get Valid Token
-    [Documentation]    Garante que um usuário exista, faz login via API 
-    ...                e armazena o token válido na variável de teste em $VALID_TOKEN.
-
-    #Cria a sessão sem passar pelo Setup padrão
-    Create Session    api    ${API_BASE_URL}
-
-    # Carrega os dados do usuário base do arquivo de fixtures JSON
-
-    ${fixture_user_data}=    Get Fixture From Collection   users    valid_user_register
-    Set Test Variable    ${fixture_user_data}
-    # Define o e-mail que será usado pelo Teardown padrão para limpar este usuário
-    Set Test Variable        ${CLEANUP_EMAIL}     ${fixture_user_data}[email]
-
-    # Garante um estado limpo removendo qualquer usuário preexistente com este e-mail
-    Remove User And Related Data    ${CLEANUP_EMAIL}
-
-    # Insere o usuário diretamente no banco de dados usando a keyword Python
-    ${user_id}=    Insert User Directly Into DB    ${fixture_user_data}
-    Set Test Variable    ${user_id}
-    # Verifica se a inserção no banco de dados realmente ocorreu
-    Should Not Be Equal    ${user_id}    ${None}    msg=Falha ao inserir usuário pré-requisito no DB
-
-    # Log para registrar a criação bem-sucedida do usuário
-    Log    Usuário pré-requisito ${fixture_user_data}[email] inserido com ID ${user_id}
-
-    # Prepara as credenciais (email e senha original) para fazer o login via API
-    &{login_credentials}=    Create Dictionary
-    ...    email=${fixture_user_data}[email]
-    ...    password=${fixture_user_data}[password]
-
-    # Realiza o login usando a keyword do serviço de autenticação para obter um token válido
-    ${login_response}=    Login User    credentials=${login_credentials}
-
-    # Valida se a resposta do login foi bem-sucedida (Status 200 e Schema correto)
-    Validate Successful API Response    ${login_response}    200    login_success_response.schema.json
-
-    # Extrai o token JWT ('accessToken') da resposta JSON do login
-    ${token}=    Set Variable    ${login_response.json()}[data][token]
-
-    # Armazena o token extraído em uma variável de TESTE (${VALID_TOKEN})
-    # Esta variável fica disponível para o Test Case que chamou este Setup
-    Set Test Variable    ${VALID_TOKEN}    ${token}
-
-    # Log para registrar o token válido que foi obtido
-    Log    Token válido obtido para o teste: ${VALID_TOKEN}

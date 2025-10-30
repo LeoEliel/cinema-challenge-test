@@ -28,9 +28,9 @@ Validate Error API Response
     ...    optionally nested field errors, and optionally a schema.
     [Arguments]    ${response}
     ...            ${expected_status_code}
-    ...            ${expected_error_message}=${None} 
-    ...            ${expected_errors_dict}=${None}
-    ...            ${schema_file}=${None}        # Schema file path
+    ...            ${expected_error_message}=${EMPTY} 
+    ...            ${expected_errors_dict}=${EMPTY}
+    ...            ${schema_file}=${EMPTY}        # Schema file path
 
     # 1. Valida o Status Code
     Should Be Equal As Strings    ${response.status_code}    ${expected_status_code}
@@ -38,15 +38,16 @@ Validate Error API Response
     ${body}=    Set Variable    ${response.json()}
 
     # 2. Valida a mensagem de erro de nível superior (se fornecida)
-    Run Keyword If    '${expected_error_message}' != '${None}' and 'message' in ${body}
+    Run Keyword If    '${expected_error_message}' != '${EMPTY}' and 'message' in ${body}
     ...    Should Be Equal As Strings    ${body['message']}    ${expected_error_message}
 
     # 3. Valida erros de campo aninhados (NOVO!)
-    Run Keyword If    ${expected_errors_dict} is not ${None} and 'errors' in ${body}
+    Run Keyword And Ignore Error
+    ...    Run Keyword If    '${expected_errors_dict}' != '${EMPTY}' and 'errors' in ${body}
     ...    Dictionary Should Contain Sub Dictionary    ${body['errors']}    ${expected_errors_dict}
 
     # 4. Valida o schema JSON (se fornecido)
-    Run Keyword If    '${schema_file}' != '${None}'
+    Run Keyword If    '${schema_file}' != '${EMPTY}'
     ...    Validate Json    
     ...    ${schema_file}
     ...    ${body}

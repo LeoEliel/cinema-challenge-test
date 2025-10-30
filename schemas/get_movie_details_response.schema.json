@@ -1,0 +1,60 @@
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "const": true
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "_id": { "type": "string" },
+        "customId": { "type": "string" },
+        "title": { "type": "string" },
+        "synopsis": { "type": "string" },
+        "director": { "type": "string" },
+        "genres": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "duration": { "type": "integer" },
+        "classification": { "type": "string" },
+        "poster": { "type": "string" },
+        "releaseDate": { "type": "string", "format": "date-time" },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "__v": {
+          "type": "integer"
+        },
+        "updatedAt": {
+           "type": "string",
+           "format": "date-time"
+        },
+        "sessions": {
+          "type": "array",
+          "items": {}
+        },
+        "id": { "type": "string" }
+      },
+      "required": [
+        "_id",
+        "title",
+        "synopsis",
+        "director",
+        "genres",
+        "duration",
+        "classification",
+        "poster",
+        "releaseDate",
+        "createdAt",
+        "sessions",
+        "id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": ["success", "data"],
+  "additionalProperties": false
+}

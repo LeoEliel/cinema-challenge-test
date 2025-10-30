@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "description": "Indica falha devido à permissão",
+      "type": "boolean",
+      "const": false
+    },
+    "message": {
+      "description": "Mensagem de erro de acesso negado (Forbidden)",
+      "type": "string",
+      "const": "User role user is not authorized to access this route"
+    }
+  },
+  "required": ["success", "message"],
+  "additionalProperties": false
+}
