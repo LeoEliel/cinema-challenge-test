@@ -12,8 +12,10 @@ ${MOVIE_FIXTURES}            ../../fixtures/movies.json
 ${MOVIE_SCHEMA_LIST}         list_movies_response.schema.json
 ${MOVIE_SCHEMA_DETAIL}       get_movie_details_response.schema.json
 ${MOVIE_NOT_FOUND_SCHEMA}    movie_not_found_error.schema.json
-${MOVIE_CREATE_SCHEMA}       create_movie_response.schema.json     # Nome do novo schema
-${MOVIE_UPDATE_SCHEMA}       update_movie_response.schema.json     # <-- NOVO SCHEMA
+${MOVIE_CREATE_SCHEMA}       create_movie_response.schema.json
+${MOVIE_UPDATE_SCHEMA}       update_movie_response.schema.json
+${MOVIE_DELETE_SCHEMA}       delete_movie_response.schema.json
+${ADMIN_EMAIL_FIXTURE}       admin@example.com
 ${NON_EXISTENT_MOVIE_ID}     111111111111111111111111     # Um ObjectId válido, mas garantido (esperamos) que não exista
 
 *** Test Cases ***
@@ -224,3 +226,53 @@ CTC-041_API (API): Admin atualiza filme existente com sucesso
     Should Be Equal As Strings    ${body['data']['synopsis']}     ${nova_sinopse}
     # Confirma que o ID não mudou
     Should Be Equal As Strings    ${body['data']['_id']}          ${movie_id_to_update}
+
+CTC-041_API (API): Admin deleta filme existente com sucesso
+    [Tags]    API    AdminOnly    MoviesCRUD    CN-86    US-MOVIE-Admin # Tag para a US de admin de filmes
+    [Documentation]
+    ...              Dado que estou autenticado como Admin e um filme existe
+    ...              Quando envio DELETE para "/movies/{id}" com token de Admin
+    ...              Então a resposta deve ter status 200 OK
+    ...              E o corpo da resposta deve ser "Movie removed"
+    ...              E o filme não deve mais ser encontrado (404)
+    # Setup: Cria um filme (${CREATED_MOVIE_ID_FOR_TEST})
+    # E gera um token de Admin (${ADMIN_TOKEN_BEARER})
+    [Setup]    Setup Movies For Test    base_valid_movie
+
+    # --- PREPARAÇÃO DA AÇÃO ---
+    # Headers de Admin e ID do filme já estão disponíveis do [Setup]
+    &{admin_headers}=    Create Dictionary    Authorization=${GENERATED_ADMIN_TOKEN_FOR_DEBUG}
+    ${movie_id_string}=    Convert To String    ${MOVIE_ID_LIST}[0]
+    Log    Filme a ser deletado: ${movie_id_string}    INFO
+    # --- FIM PREPARAÇÃO ---
+
+    # --- AÇÃO: Deleta o filme ---
+    # Chama a keyword (corrigida) do service
+    ${response}=    Delete Movie
+    ...    movie_id=${movie_id_string}
+    ...    admin_headers=${admin_headers}
+
+    # --- VALIDAÇÃO (PARTE 1): Resposta do DELETE ---
+    # Valida se o status é 200 (OK) e o schema/mensagem estão corretos
+    Validate Successful API Response
+    ...    response=${response}
+    ...    expected_status_code=200
+    ...    schema_file=${MOVIE_DELETE_SCHEMA}
+
+    # --- VALIDAÇÃO (PARTE 2): Verifica se o filme FOI deletado ---
+    Log    Validando se o filme ${movie_id_string} foi realmente deletado...    INFO
+    # Tenta buscar o filme que acabou de ser deletado
+    ${response_after}=    Get Movie By ID    movie_id=${movie_id_string}
+
+    # Valida se a resposta agora é 404 Not Found
+    Validate Error API Response
+    ...    response=${response_after}
+    ...    expected_status_code=404
+    ...    schema_file=${MOVIE_NOT_FOUND_SCHEMA}
+
+    # --- LIMPEZA ---
+    # Limpa a variável @{movie_id_string} para que o Teardown padrão não tente deletar de novo
+    # (O Teardown ainda fechará a sessão HTTP)
+    @{empty_list}=    Create List
+    Set Test Variable    @{MOVIE_ID_LIST}    @{empty_list}
+    Log    ID do filme removido da lista de cleanup do Teardown.

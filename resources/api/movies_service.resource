@@ -81,7 +81,7 @@ Setup Movies For Test
     # Insere os filmes via DB e guarda os IDs
     FOR    ${element}    IN    @{data_list}
         Log    Inserindo Filme no DB: ${element}[title]
-        ${id_movie}=    Insert Movie Directly Into DB    ${element} # Keyword do database_manager
+        ${id_movie}=    Insert Movie Directly Into DB    ${element}     # Keyword do database_manager
         Should Not Be Equal    ${id_movie}    ${None}    msg=Falha ao inserir filme '${element}[title]' no DB
         Append To List    ${ids_created_in_setup}    ${id_movie}
     END
@@ -89,6 +89,10 @@ Setup Movies For Test
     # Define a lista de IDs como VARIÁVEL DE TESTE para ser usada pelo Test Teardown
     Set Test Variable    @{MOVIE_ID_LIST}    @{ids_created_in_setup}
     Log    IDs dos filmes criados para este teste (@{MOVIE_ID_LIST}): @{ids_created_in_setup}
+
+    # 1. Cria o token de Admin -> ${GENERATED_ADMIN_TOKEN_FOR_DEBUG}
+    Verificar Geração de Token de Admin
+    Log    Token de Admin gerado.
 
 
 API Test Teardown For Movie Collection

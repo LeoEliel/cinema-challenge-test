@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "description": "Indica que o filme foi deletado com sucesso",
+      "type": "boolean",
+      "const": true
+    },
+    "message": {
+      "description": "Mensagem de confirmação da deleção",
+      "type": "string",
+      "const": "Movie removed"
+    }
+  },
+  "required": ["success", "message"],
+  "additionalProperties": false
+}
