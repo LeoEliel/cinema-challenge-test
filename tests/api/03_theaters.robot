@@ -419,6 +419,39 @@ CN-76 (API): Tentar deletar uma sala (Theater) sem autenticação
     # definido no *** Settings *** rodará automaticamente e limpará a sala
     # que foi criada pelo [Setup], pois @{THEATER_ID_LIST} está definida.
 
+CTC-030_NEGATIVE_NOT_FOUND_API (API): Admin tenta deletar sala com ID inexistente
+    [Tags]    API    Negative    AdminOnly    TheatersCRUD    CTC-030_Negative # Adicione ID Jira (ex: CN-90)
+    [Documentation]
+    ...              Dado que estou autenticado como Admin
+    ...              Quando envio DELETE para "/theaters/{id_inexistente}"
+    ...              Então a resposta deve ter status 404 Not Found
+    ...              E o corpo da resposta deve conter "Theater not found"
+    # Setup: Roda o setup padrão E gera o token de Admin
+    [Setup]    Run Keywords
+    ...    API Test Setup
+    ...    AND    Generate Admin Token For Test
+
+    # Cria uma lista vazia para a variável de teardown @{THEATER_ID_LIST}
+    # Isso é crucial para que o 'Test Teardown' padrão (API Test Teardown For Theater Collection)
+    # rode sem falhar, pois ele espera que essa variável exista.
+    @{EMPTY_LIST}=    Create List
+    Set Test Variable    @{THEATER_ID_LIST}    @{EMPTY_LIST}
+
+    # Monta os headers com o token de Admin obtido no Setup
+    &{admin_headers}=    Create Dictionary    Authorization=${ADMIN_TOKEN_BEARER}
+
+    # Ação: Tenta deletar uma sala usando um ID inexistente
+    ${response}=    Delete Theater
+    ...    theater_id=${NON_EXISTENT_THEATER_ID}
+    ...    admin_headers=${admin_headers}
+
+    # Validação: Usa a keyword de validação de erro e o schema 404
+    # Reutiliza o schema 'theater_not_found_error.schema.json'
+    Validate Error API Response
+    ...    response=${response}
+    ...    expected_status_code=404
+    ...    schema_file=${THEATER_NOT_FOUND_SCHEMA}
+
 *** Keywords ***
 Setup Theaters For Test
     [Documentation]    Carrega dados do fixture, limpa dados antigos, insere sala(s) via DB
