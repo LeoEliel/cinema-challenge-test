@@ -1,0 +1,50 @@
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "description": "Indica se a busca foi bem-sucedida",
+      "type": "boolean",
+      "const": true
+    },
+    "count": {
+      "description": "Número total de salas encontradas (independentemente da paginação)",
+      "type": "integer",
+      "minimum": 0
+    },
+    "data": {
+      "description": "Lista de salas encontradas na página atual",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/theater"
+      }
+    }
+  },
+  "required": ["success", "count", "data"],
+  "additionalProperties": false,
+
+  "definitions": {
+    "theater": {
+      "description": "Objeto representando uma sala (theater)",
+      "type": "object",
+      "properties": {
+        "_id": { "type": "string" },
+        "name": { "type": "string" },
+        "capacity": { "type": "integer" },
+        "type": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "__v": { "type": "integer" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "id": { "type": "string" }
+      },
+      "required": [
+        "_id",
+        "name",
+        "capacity",
+        "type",
+        "createdAt",
+        "id"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

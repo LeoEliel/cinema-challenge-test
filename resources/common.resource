@@ -19,7 +19,7 @@ Variables    ../variables/env_vars.py
 Resource    api/auth_service.resource
 # Resource    api/users_service.resource
 Resource    api/movies_service.resource
-# Resource    api/theaters_service.resource
+Resource    api/theaters_service.resource
 # Resource    api/sessions_service.resource
 # Resource    api/reservations_service.resource
 
