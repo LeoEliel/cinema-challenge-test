@@ -517,6 +517,40 @@ CN-51 (API): Tentar criar uma nova sala (Theater) sem autenticação
     # Ação: Tenta criar a sala SEM passar o header 'admin_headers'
     ${response}=    Create Theater
     ...    payload=${fixture_payload}
+    ...    admin_headers=${EMPTY}     # Envia headers vazios
+
+    # Validação: Usa a keyword de validação de erro e o schema 401
+    Validate Error API Response
+    ...    response=${response}
+    ...    expected_status_code=401
+    ...    schema_file=${UNAUTHORIZED_ERROR_SCHEMA} # Reutiliza o schema de 401
+
+    
+CN-54 (API): Tentar atualizar uma sala (Theater) sem autenticação
+    [Tags]    API    Negative    Security    TheatersCRUD    CTC-028_Negative    CN-54
+    [Documentation]
+    ...              Dado que eu não estou autenticado
+    ...              E existe uma sala com um ID conhecido
+    ...              Quando eu envio uma requisição PUT para o endpoint "/theaters/{id_da_sala}" com novos dados
+    ...              Então a resposta deve ter o status code 401
+    ...              E o corpo da resposta deve conter uma mensagem de erro de "Não autorizado"
+    # Setup específico: cria 1 sala (usando 'base_valid_theater')
+    # Esta keyword já define @{THEATER_ID_LIST} para o Teardown
+    [Setup]    Setup Theaters For Test    base_valid_theater
+
+    # --- PREPARAÇÃO DA AÇÃO ---
+    # Pega o ID da sala que foi criada no Setup
+    ${theater_id_to_update}=    Set Variable    ${THEATER_ID_LIST}[0]
+    Log    Sala alvo para tentativa de PUT (sem token): ${theater_id_to_update}
+
+    # Monta um payload de atualização válido (o conteúdo não importa, a API deve falhar antes)
+    &{update_payload}=    Create Dictionary    name=Tentativa de Update Sem Token
+    # --- FIM PREPARAÇÃO ---
+
+    # Ação: Tenta atualizar a sala SEM passar o header 'admin_headers'
+    ${response}=    Update Theater
+    ...    theater_id=${theater_id_to_update}
+    ...    payload=${update_payload}
     ...    admin_headers=${None}     # Envia headers vazios
 
     # Validação: Usa a keyword de validação de erro e o schema 401
@@ -524,6 +558,9 @@ CN-51 (API): Tentar criar uma nova sala (Theater) sem autenticação
     ...    response=${response}
     ...    expected_status_code=401
     ...    schema_file=${UNAUTHORIZED_ERROR_SCHEMA}     # Reutiliza o schema de 401
+
+    # [Teardown]: O Teardown padrão ('API Test Teardown For Theater Collection')
+    # rodará automaticamente e limpará a sala criada no [Setup].
 
 *** Keywords ***
 Setup Theaters For Test
