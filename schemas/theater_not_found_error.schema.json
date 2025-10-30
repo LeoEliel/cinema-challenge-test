@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "description": "Indica falha na busca (sala não encontrada)",
+      "type": "boolean",
+      "const": false
+    },
+    "message": {
+      "description": "Mensagem de erro indicando que a sala não foi encontrada",
+      "type": "string",
+      "const": "Theater not found"
+    }
+  },
+  "required": ["success", "message"],
+  "additionalProperties": false
+}

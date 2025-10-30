@@ -1,11 +1,30 @@
 {
   "base_valid_theater": {
-    "name": "Fixture Theater Static",
-    "capacity": 80,
-    "type": "Standard"
+    "_comment": "Usado para testes de GET/PUT/DELETE por ID (ex: CTC-101)",
+    "name": "SALA_TESTE_BASE_CTC101",
+    "capacity": 150,
+    "type": "IMAX"
   },
-  "theater_missing_capacity": {
-    "name": "Theater Missing Capacity Static",
+  "three_theaters_for_filtering": [
+    {
+      "_comment": "Usados para teste de listagem e filtro (ex: CTC-100)",
+      "name": "SALA_TESTE_FILTRO_A_STD",
+      "capacity": 100,
+      "type": "Standard"
+    },
+    {
+      "name": "SALA_TESTE_FILTRO_B_IMAX",
+      "capacity": 200,
+      "type": "IMAX"
+    },
+    {
+      "name": "SALA_TESTE_FILTRO_C_VIP",
+      "capacity": 50,
+      "type": "VIP"
+    }
+  ],
+  "theater_missing_name": {
+    "capacity": 100,
     "type": "3D"
   }
 }

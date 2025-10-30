@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "description": "Indica que a sala foi deletada com sucesso",
+      "type": "boolean",
+      "const": true
+    },
+    "message": {
+      "description": "Mensagem de confirmação da deleção",
+      "type": "string",
+      "const": "Theater removed"
+    }
+  },
+  "required": ["success", "message"],
+  "additionalProperties": false
+}

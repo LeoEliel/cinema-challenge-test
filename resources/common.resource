@@ -19,7 +19,7 @@ Variables    ../variables/env_vars.py
 Resource    api/auth_service.resource
 # Resource    api/users_service.resource
 Resource    api/movies_service.resource
-# Resource    api/theaters_service.resource
+Resource    api/theaters_service.resource
 # Resource    api/sessions_service.resource
 # Resource    api/reservations_service.resource
 
@@ -153,37 +153,74 @@ Setup Keyword Args For Generic Request
 
     RETURN    &{kwargs}
 
-Verificar Geração de Token de Admin
-    [Documentation]    Chama Generate Admin Token e verifica se retorna um token válido (formato Bearer ...).
-    [Tags]    Utils    Token
+Generate Admin Token For Test
+    [Documentation]    Garante que usuário admin exista (via fixtures) e gera token na variável de teste ${ADMIN_TOKEN_BEARER}.
+    # Define o email do admin. Poderia ser passado como argumento se tivéssemos múltiplos admins.
+    ${ADMIN_EMAIL_FIXTURE}=    Set Variable    admin@example.com     # <-- Ou carrega de ${USER_FIXTURES}
+    
+    # Garante que o usuário admin existe
+    ${admin_id}=    Get User Id by Email    ${ADMIN_EMAIL_FIXTURE}
+    Should Not Be Equal    ${admin_id}    ${None}    msg=Usuário admin ${ADMIN_EMAIL_FIXTURE} não encontrado no DB.
 
-    # Garante que o admin exista (OPCIONAL, mas mais robusto)
-    # Poderia usar Insert User Directly aqui se quisesse garantir,
-    # mas por agora, vamos assumir que ele existe (como no seu DB).
+    # Gera o token usando a keyword do data_manager
+    ${admin_token}=    Generate Admin Token    admin_email=${ADMIN_EMAIL_FIXTURE}
+    # Guarda o token para o Test Case usar
+    Set Test Variable    ${ADMIN_TOKEN_BEARER}    ${admin_token}
+    Log    Token de Admin gerado para o teste: ${ADMIN_TOKEN_BEARER}
 
-    ${fixture}    Get Fixture From Collection    users    admin_user_inserted
+Setup User And Get Valid Token
+    [Documentation]    Garante que um usuário exista, faz login via API 
+    ...                e armazena o token válido na variável de teste em $VALID_TOKEN.
+    ...                e cria $USER_EMAIL para teardown posterior
 
-    Set Test Variable    ${ADMIN_EMAIL_PARA_TESTE}    ${fixture}[email]
-    ${admin_id}=    Get User Id by Email    ${ADMIN_EMAIL_PARA_TESTE}
-    Should Not Be Equal    ${admin_id}    
-    ...    ${None}    msg=Usuário admin ${ADMIN_EMAIL_PARA_TESTE} não encontrado no DB. Setup necessário.
+    #Cria a sessão sem passar pelo Setup padrão
+    API Test Setup
 
-    # Ação: Chama a keyword para gerar o token
-    ${admin_token}=    Generate Admin Token    admin_email=${ADMIN_EMAIL_PARA_TESTE}
+    # Carrega os dados do usuário base do arquivo de fixtures JSON
+    ${fixture_user_data}=    Get Fixture From Collection   users    valid_user_register
+    
+    Set Test Variable    ${fixture_user_data}
+    # Define o e-mail que será usado pelo Teardown padrão para limpar este usuário
+    Set Test Variable        ${USER_EMAIL}     ${fixture_user_data}[email]
+    # Garante um estado limpo removendo qualquer usuário preexistente com este e-mail
+    
+    Remove User And Related Data    ${USER_EMAIL}
+    # Insere o usuário diretamente no banco de dados usando a keyword Python
+    
+    ${USER_ID}=    Insert User Directly Into DB    ${fixture_user_data}
+    Set Test Variable    ${USER_ID}
+    
+    # Verifica se a inserção no banco de dados realmente ocorreu
+    Should Not Be Equal    ${USER_ID}    ${EMPTY}    msg=Falha ao inserir usuário pré-requisito no DB
 
-    # Validações Básicas:
-    # 1. Verifica se não é vazio
-    Should Not Be Empty    ${admin_token}
-    # 2. Verifica se começa com "Bearer "
-    Should Start With    ${admin_token}    Bearer
-    # 3. Verifica se tem mais do que apenas "Bearer " (um token real)
-    ${token_part}=    Split String    ${admin_token}    ${SPACE}    max_split=1
-    Should Not Be Empty    ${token_part}[1]
-    # 4. Verifica se o token tem um comprimento razoável (JWTs são longos)
-    ${token_length}=    Get Length    ${token_part}[1]
-    Should Be True    ${token_length} > 50 
-    # Um valor arbitrário, JWTs são geralmente > 100 caracteres
+    # Log para registrar a criação bem-sucedida do usuário
+    Log    Usuário pré-requisito ${USER_EMAIL} inserido com ID ${USER_ID}
 
-    Log    Token de Admin gerado com sucesso: ${admin_token}
-    # Guarda para ver no log
-    Set Suite Variable    ${GENERATED_ADMIN_TOKEN_FOR_DEBUG}    ${admin_token}     
+    # Prepara as credenciais (email e senha original) para fazer o login via API
+    &{login_credentials}=    Create Dictionary
+    ...    email=${fixture_user_data}[email]
+    ...    password=${fixture_user_data}[password]
+
+    # Realiza o login usando a keyword do serviço de autenticação para obter um token válido
+    ${login_response}=    Login User    credentials=${login_credentials}
+
+    # Valida se a resposta do login foi bem-sucedida (Status 200 e Schema correto)
+    Validate Successful API Response    ${login_response}    200    login_success_response.schema.json
+
+    # Extrai o token JWT ('accessToken') da resposta JSON do login
+    ${token}=    Set Variable    ${login_response.json()}[data][token]
+
+    # Armazena o token extraído em uma variável de TESTE (${VALID_TOKEN})
+    # Esta variável fica disponível para o Test Case que chamou este Setup
+    Set Test Variable    ${VALID_TOKEN}    ${token}
+
+    # Log para registrar o token válido que foi obtido
+    Log    Token válido obtido para o teste: ${VALID_TOKEN}
+
+API Test Teardown For User Collection
+    [Documentation]    Fecha a sessão de API e remove dados de usuário
+    Run Keyword If   '${USER_EMAIL}' != '${EMPTY}'
+    ...    Remove User And Related Data    ${USER_EMAIL}
+    
+    Delete All Sessions
+
