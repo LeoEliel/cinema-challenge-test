@@ -562,6 +562,57 @@ CN-54 (API): Tentar atualizar uma sala (Theater) sem autenticação
     # [Teardown]: O Teardown padrão ('API Test Teardown For Theater Collection')
     # rodará automaticamente e limpará a sala criada no [Setup].
 
+CN-55 (API): Tentar atualizar uma sala (Theater) como usuário normal
+    [Tags]    API    Negative    AdminOnly    TheatersCRUD    CTC-028_Negative    CN-55
+    [Documentation]
+    ...              Dado que estou autenticado como usuário normal (não-Admin)
+    ...              E existe uma sala com um ID conhecido
+    ...              Quando eu envio uma requisição PUT para o endpoint "/theaters/{id_da_sala}" com novos dados
+    ...              Então a resposta deve ter o status code 403
+    ...              E o corpo da resposta deve conter uma mensagem de erro de "Forbidden" ou "Acesso Negado"
+    
+    # --- SETUP INLINE ---
+    # 1. Cria um usuário normal e obtém seu token
+    # (Assume que 'Setup User And Get Valid Token' está em common.resource
+    # e define as variáveis de teste ${VALID_TOKEN} e ${USER_EMAIL})
+    Setup User And Get Valid Token
+    ${normal_user_token_bearer}=    Set Variable    ${VALID_TOKEN}
+    Log    Usuário normal e token (${normal_user_token_bearer}) prontos.
+
+    # 2. Cria uma sala (theater) para ser o alvo
+    ${fixture_sala}=    Get Fixture From Collection   theaters    base_valid_theater
+    # Garante limpeza prévia
+    ${existing_id}=     Get Theater Id By Name        ${fixture_sala}[name]
+    Run Keyword If      '${existing_id}' != '${None}'  Remove Theater And Related Data    ${existing_id}
+    # Insere a sala alvo no DB
+    ${theater_id_to_update}=    Insert Theater Directly Into DB    ${fixture_sala}
+    Should Not Be Equal    ${theater_id_to_update}    ${None}    msg=Falha ao inserir sala pré-requisito no DB
+    Log    Sala alvo (${theater_id_to_update}) pronta.
+
+    # 3. Prepara o Teardown da Sala
+    @{ids_to_clean}=    Create List    ${theater_id_to_update}
+    Set Test Variable    @{THEATER_ID_LIST}    @{ids_to_clean}
+    # --- FIM SETUP INLINE ---
+
+    # --- PREPARAÇÃO DA AÇÃO ---
+    # Monta os headers com o token de USUÁRIO NORMAL
+    &{normal_user_headers}=    Create Dictionary    Authorization=Bearer ${normal_user_token_bearer}
+    # Monta um payload de atualização válido
+    &{update_payload}=    Create Dictionary    name=Tentativa de Update Ilegal
+    # --- FIM PREPARAÇÃO ---
+
+    # Ação: Tenta atualizar a sala usando o token de usuário normal
+    ${response}=    Update Theater
+    ...    theater_id=${theater_id_to_update}
+    ...    payload=${update_payload}
+    ...    admin_headers=${normal_user_headers}
+
+    # Validação: Usa a keyword de validação de erro e o schema 403
+    Validate Error API Response
+    ...    response=${response}
+    ...    expected_status_code=403
+    ...    schema_file=${FORBIDDEN_ERROR_SCHEMA}
+
 *** Keywords ***
 Setup Theaters For Test
     [Documentation]    Carrega dados do fixture, limpa dados antigos, insere sala(s) via DB
