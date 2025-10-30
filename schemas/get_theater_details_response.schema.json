@@ -32,7 +32,7 @@
           "items": { "$ref": "#/definitions/session" }
         }
       },
-      "required": ["_id", "name", "capacity", "type", "createdAt", "__v", "updatedAt", "id", "sessions"],
+      "required": ["_id", "name", "capacity", "type", "createdAt", "id", "sessions"],
       "additionalProperties": false
     },
 
@@ -55,7 +55,7 @@
         "updatedAt": { "type": "string", "format": "date-time" },
         "id": { "type": "string" }
       },
-      "required": ["_id", "movie", "theater", "datetime", "fullPrice", "halfPrice", "seats", "createdAt", "__v", "updatedAt", "id"],
+      "required": ["_id", "movie", "theater", "datetime", "fullPrice", "halfPrice", "seats", "createdAt", "id"],
       "additionalProperties": false
     },
 

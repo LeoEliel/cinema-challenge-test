@@ -153,37 +153,17 @@ Setup Keyword Args For Generic Request
 
     RETURN    &{kwargs}
 
-Verificar Geração de Token de Admin
-    [Documentation]    Chama Generate Admin Token e verifica se retorna um token válido (formato Bearer ...).
-    [Tags]    Utils    Token
+Generate Admin Token For Test
+    [Documentation]    Garante que usuário admin exista (via fixtures) e gera token na variável de teste ${ADMIN_TOKEN_BEARER}.
+    # Define o email do admin. Poderia ser passado como argumento se tivéssemos múltiplos admins.
+    ${ADMIN_EMAIL_FIXTURE}=    Set Variable    admin@example.com     # <-- Ou carrega de ${USER_FIXTURES}
+    
+    # Garante que o usuário admin existe
+    ${admin_id}=    Get User Id by Email    ${ADMIN_EMAIL_FIXTURE}
+    Should Not Be Equal    ${admin_id}    ${None}    msg=Usuário admin ${ADMIN_EMAIL_FIXTURE} não encontrado no DB.
 
-    # Garante que o admin exista (OPCIONAL, mas mais robusto)
-    # Poderia usar Insert User Directly aqui se quisesse garantir,
-    # mas por agora, vamos assumir que ele existe (como no seu DB).
-
-    ${fixture}    Get Fixture From Collection    users    admin_user_inserted
-
-    Set Test Variable    ${ADMIN_EMAIL_PARA_TESTE}    ${fixture}[email]
-    ${admin_id}=    Get User Id by Email    ${ADMIN_EMAIL_PARA_TESTE}
-    Should Not Be Equal    ${admin_id}    
-    ...    ${None}    msg=Usuário admin ${ADMIN_EMAIL_PARA_TESTE} não encontrado no DB. Setup necessário.
-
-    # Ação: Chama a keyword para gerar o token
-    ${admin_token}=    Generate Admin Token    admin_email=${ADMIN_EMAIL_PARA_TESTE}
-
-    # Validações Básicas:
-    # 1. Verifica se não é vazio
-    Should Not Be Empty    ${admin_token}
-    # 2. Verifica se começa com "Bearer "
-    Should Start With    ${admin_token}    Bearer
-    # 3. Verifica se tem mais do que apenas "Bearer " (um token real)
-    ${token_part}=    Split String    ${admin_token}    ${SPACE}    max_split=1
-    Should Not Be Empty    ${token_part}[1]
-    # 4. Verifica se o token tem um comprimento razoável (JWTs são longos)
-    ${token_length}=    Get Length    ${token_part}[1]
-    Should Be True    ${token_length} > 50 
-    # Um valor arbitrário, JWTs são geralmente > 100 caracteres
-
-    Log    Token de Admin gerado com sucesso: ${admin_token}
-    # Guarda para ver no log
-    Set Suite Variable    ${GENERATED_ADMIN_TOKEN_FOR_DEBUG}    ${admin_token}     
+    # Gera o token usando a keyword do data_manager
+    ${admin_token}=    Generate Admin Token    admin_email=${ADMIN_EMAIL_FIXTURE}
+    # Guarda o token para o Test Case usar
+    Set Test Variable    ${ADMIN_TOKEN_BEARER}    ${admin_token}
+    Log    Token de Admin gerado para o teste: ${ADMIN_TOKEN_BEARER}
