@@ -18,6 +18,7 @@ ${THEATER_CREATE_SCHEMA}        create_theater_response.schema.json
 ${THEATER_UPDATE_SCHEMA}        update_theater_response.schema.json
 ${THEATER_DELETE_SCHEMA}        delete_theater_response.schema.json
 ${FORBIDDEN_ERROR_SCHEMA}       forbidden_error_response.schema.json
+${UNAUTHORIZED_ERROR_SCHEMA}    unauthorized_error_response.schema.json
 
 ${NON_EXISTENT_THEATER_ID}      111111111111111111111111
 ${ADMIN_EMAIL_FIXTURE}          admin@example.com
@@ -383,6 +384,40 @@ CTC-043_API (API): Tentar deletar sala como usuário normal (Forbidden)
     ...    response=${response}
     ...    expected_status_code=403
     ...    schema_file=${FORBIDDEN_ERROR_SCHEMA}
+
+CN-76 (API): Tentar deletar uma sala (Theater) sem autenticação
+    [Tags]    API    Negative    Security    TheatersCRUD    CTC-030_Negative    CN-76
+    [Documentation]
+    ...              Dado que eu não estou autenticado
+    ...              E existe uma sala com um ID conhecido
+    ...              Quando eu envio uma requisição DELETE para o endpoint "/theaters/{id_da_sala}"
+    ...              Então a resposta deve ter o status code 401
+    ...              E o corpo da resposta deve conter uma mensagem de erro de "Não autorizado"
+    # Setup específico: cria 1 sala (usando 'base_valid_theater')
+    # Esta keyword já define @{THEATER_ID_LIST} para o Teardown
+    [Setup]    Setup Theaters For Test    base_valid_theater
+
+    # Dado (Given) - Pega o ID da sala que foi criada no Setup
+    ${theater_id_to_delete}=    Set Variable    ${THEATER_ID_LIST}[0]
+    Log    Sala alvo para tentativa de DELETE (sem token): ${theater_id_to_delete}
+
+    # Ação: Tenta deletar a sala SEM passar o header 'admin_headers'
+    # A keyword 'Delete Theater' (do service) deve lidar com headers=${EMPTY}
+    ${response}=    Delete Theater
+    ...    theater_id=${theater_id_to_delete}
+    ...    admin_headers=${None}     # Envia headers vazios
+    
+    #Log To Console    ${response.json()}
+
+    # Validação: Usa a keyword de validação de erro e o schema 401
+    Validate Error API Response
+    ...    response=${response}
+    ...    expected_status_code=401
+    ...    schema_file=${UNAUTHORIZED_ERROR_SCHEMA}     # Reutiliza o schema de 401
+
+    # [Teardown] O Teardown padrão ('API Test Teardown For Theater Collection')
+    # definido no *** Settings *** rodará automaticamente e limpará a sala
+    # que foi criada pelo [Setup], pois @{THEATER_ID_LIST} está definida.
 
 *** Keywords ***
 Setup Theaters For Test
