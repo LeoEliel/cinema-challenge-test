@@ -11,7 +11,7 @@ Test Teardown     API Test Teardown For Theater Collection
 *** Variables ***
 ${THEATER_FIXTURES}       ../../fixtures/theaters.json
 ${THEATER_SCHEMA_LIST}    list_theaters_response.schema.json
-${THEATER_SCHEMA_DETAIL}  get_movie_details_response.schema.json
+${THEATER_SCHEMA_DETAIL}  get_theater_details_response.schema.json
 # ... (outros schemas e variáveis)
 
 *** Test Cases ***
@@ -75,6 +75,40 @@ CTC-23_API (API): Buscar detalhes de sala por ID com sucesso
     Should Be Equal As Strings    ${body['data']['_id']}      ${theater_id_to_get}
     Should Be Equal As Strings    ${body['data']['name']}      ${fixture_data}[name]
     Should Be Equal As Strings    ${body['data']['type']}      ${fixture_data}[type]
+
+CTC-24_API (API): Buscar detalhes de sala por ID existente
+    [Tags]    API    Smoke    Theaters    CTC-24_API    CN-48
+    [Documentation]
+    ...              Dado que existe uma sala com um ID conhecido
+    ...              Quando eu envio uma requisição GET para o endpoint "/theaters/{id_da_sala}"
+    ...              Então a resposta deve ter o status code 200
+    ...              E o corpo da resposta deve conter os dados da sala específica (e suas sessões)
+    # Setup específico: cria 1 sala do fixture 'base_valid_theater'
+    [Setup]    Setup Theaters For Test    base_valid_theater
+
+    # Dado (ID do setup)
+    # Pega o ID da sala criada na lista @{THEATER_ID_LIST}
+    ${theater_id_to_get}=    Set Variable    ${THEATER_ID_LIST}[0]
+
+    # Ação: Chama a keyword do theaters_service
+    ${response}=    Get Theater By ID    theater_id=${theater_id_to_get}
+    
+    Log To Console    ${response}
+    # Validação (AGORA PODEMOS USAR A KEYWORD PADRÃO!)
+    # A resposta tem o wrapper "success": true, "data": {...}
+    Validate Successful API Response
+    ...    response=${response}
+    ...    expected_status_code=200
+    ...    schema_file=${THEATER_SCHEMA_DETAIL}
+
+    # Validações Extras de Valores
+    ${fixture_data}=   Get Fixture From Collection   theaters    base_valid_theater
+    ${body}=           Set Variable                  ${response.json()}
+    Should Be Equal As Strings    ${body['data']['_id']}      ${theater_id_to_get}
+    Should Be Equal As Strings    ${body['data']['name']}      ${fixture_data}[name]
+    Should Be Equal As Strings    ${body['data']['type']}      ${fixture_data}[type]
+    # Valida que as sessões (pelo menos a lista) estão lá
+    Dictionary Should Contain Key    ${body['data']}    sessions
 
 *** Keywords ***
 Setup Theaters For Test
