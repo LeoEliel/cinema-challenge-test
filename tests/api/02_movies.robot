@@ -276,3 +276,33 @@ CTC-041_API (API): Admin deleta filme existente com sucesso
     @{empty_list}=    Create List
     Set Test Variable    @{MOVIE_ID_LIST}    @{empty_list}
     Log    ID do filme removido da lista de cleanup do Teardown.
+
+CTC-042_NEGATIVE_NOT_FOUND_API (API): Admin tenta deletar filme com ID inexistente
+    [Tags]    API    Negative    AdminOnly    MoviesCRUD    CTC-042_Negative    CN-87
+    [Documentation]
+    ...              Dado que estou autenticado como Admin
+    ...              Quando envio DELETE para "/movies/{id_inexistente}"
+    ...              Então a resposta deve ter status 404 Not Found
+    ...              E o corpo da resposta deve estar vazio
+    # Setup: Gera um token de Admin
+    ${admin_token_bearer}=    Generate Admin Token    admin_email=${ADMIN_EMAIL_FIXTURE}
+
+    # Cria uma lista vazia para a variável de teardown
+    # (Necessário para o 'API Test Teardown For Movie Collection' rodar sem erros)
+    @{MOVIE_ID_LIST}=    Create List
+    Set Test Variable    @{MOVIE_ID_LIST}
+
+    # Monta os headers com o token de Admin obtido no Setup
+    &{admin_headers}=    Create Dictionary    Authorization=${admin_token_bearer}
+
+    # Ação: Tenta deletar um filme usando um ID inexistente
+    ${response}=    Delete Movie
+    ...    movie_id=${NON_EXISTENT_MOVIE_ID}
+    ...    admin_headers=${admin_headers}
+    
+    # Validação: Usa a keyword padrão 'Validate Error API Response'
+    # Reutiliza o schema 'movie_not_found_error.schema.json'
+    Validate Error API Response
+    ...    response=${response}
+    ...    expected_status_code=404
+    ...    schema_file=${MOVIE_NOT_FOUND_SCHEMA}     # Valida a estrutura E a mensagem via schema
