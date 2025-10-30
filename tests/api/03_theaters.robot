@@ -517,13 +517,13 @@ CN-51 (API): Tentar criar uma nova sala (Theater) sem autenticação
     # Ação: Tenta criar a sala SEM passar o header 'admin_headers'
     ${response}=    Create Theater
     ...    payload=${fixture_payload}
-    ...    admin_headers=${EMPTY}     # Envia headers vazios
+    ...    admin_headers=${None}     # Envia headers vazios
 
     # Validação: Usa a keyword de validação de erro e o schema 401
     Validate Error API Response
     ...    response=${response}
     ...    expected_status_code=401
-    ...    schema_file=${UNAUTHORIZED_ERROR_SCHEMA} # Reutiliza o schema de 401
+    ...    schema_file=${UNAUTHORIZED_ERROR_SCHEMA}     # Reutiliza o schema de 401
 
     
 CN-54 (API): Tentar atualizar uma sala (Theater) sem autenticação
@@ -612,6 +612,44 @@ CN-55 (API): Tentar atualizar uma sala (Theater) como usuário normal
     ...    response=${response}
     ...    expected_status_code=403
     ...    schema_file=${FORBIDDEN_ERROR_SCHEMA}
+
+CN-87 (API): Admin tenta atualizar sala com ID inexistente
+    [Tags]    API    Negative    AdminOnly    TheatersCRUD    CTC-028_Negative    CN-91
+    [Documentation]
+    ...              Dado que estou autenticado como Admin
+    ...              Quando envio PUT para "/theaters/{id_inexistente}" com dados válidos
+    ...              Então a resposta deve ter status 404 Not Found
+    ...              E o corpo da resposta deve conter "Theater not found"
+    # Setup: Gera um token de Admin
+    Generate Admin Token For Test
+
+    # --- PREPARAÇÃO DO TEARDOWN ---
+    # Garante que as variáveis de limpeza existam e estejam vazias
+    # para que o Teardown Padrão da suíte (Run Keywords... AND...) execute sem falhas.
+    @{EMPTY_LIST}=    Create List
+    Set Test Variable    @{THEATER_ID_LIST}    @{EMPTY_LIST}
+    Set Test Variable    ${USER_EMAIL}         ${None}
+    # --- FIM PREPARAÇÃO DO TEARDOWN ---
+
+    # --- PREPARAÇÃO DA AÇÃO ---
+    # Monta os headers com o token de Admin obtido no Setup
+    &{admin_headers}=    Create Dictionary    Authorization=${ADMIN_TOKEN_BEARER}
+    # Carrega um payload de atualização válido (o conteúdo não importa, a API deve falhar antes)
+    ${update_payload}=   Get Fixture From Collection   theaters    base_valid_theater
+    # --- FIM PREPARAÇÃO ---
+
+    # Ação: Tenta atualizar uma sala usando um ID inexistente
+    ${response}=    Update Theater
+    ...    theater_id=${NON_EXISTENT_THEATER_ID}
+    ...    payload=${update_payload}
+    ...    admin_headers=${admin_headers}
+
+    # Validação: Usa a keyword de validação de erro e o schema 404
+    # Reutiliza o schema 'theater_not_found_error.schema.json'
+    Validate Error API Response
+    ...    response=${response}
+    ...    expected_status_code=404
+    ...    schema_file=${THEATER_NOT_FOUND_SCHEMA}     # Valida a estrutura E a mensagem via schema
 
 *** Keywords ***
 Setup Theaters For Test
