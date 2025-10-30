@@ -14,7 +14,8 @@ ${THEATER_FIXTURES}       ../../fixtures/theaters.json
 ${THEATER_SCHEMA_LIST}          list_theaters_response.schema.json
 ${THEATER_SCHEMA_DETAIL}        get_theater_details_response.schema.json
 ${THEATER_NOT_FOUND_SCHEMA}     theater_not_found_error.schema.json
-${THEATER_CREATE_SCHEMA}        create_theater_response.schema.json    
+${THEATER_CREATE_SCHEMA}        create_theater_response.schema.json
+${THEATER_UPDATE_SCHEMA}        update_theater_response.schema.json
 
 ${NON_EXISTENT_THEATER_ID}      111111111111111111111111
 ${ADMIN_EMAIL_FIXTURE}          admin@example.com
@@ -182,6 +183,63 @@ CTC-26_API (API): Admin cria nova sala (Theater) com sucesso
     ${created_theater_id}=    Set Variable    ${body['data']['_id']}
     Append To List    ${THEATER_ID_LIST}    ${created_theater_id}
     Set Test Variable    @{THEATER_ID_LIST}
+
+CTC-28_API (API): Admin atualiza sala (Theater) existente com sucesso
+    [Tags]    API    AdminOnly    TheatersCRUD    CTC-28_API    CN-53
+    [Documentation]
+    ...              Dado que estou autenticado como Admin e uma sala existe
+    ...              Quando envio PUT para "/theaters/{id_da_sala}" com um novo nome
+    ...              Então a resposta deve ter status 200 OK
+    ...              E o corpo da resposta deve conter os dados da sala atualizados
+    
+    # --- SETUP INLINE ---
+    # Gera o token de Admin
+    Generate Admin Token For Test
+    # Monta os headers com o token
+    &{admin_headers}=      Create Dictionary    Authorization=${ADMIN_TOKEN_BEARER}
+
+    # Carrega o fixture da sala base
+    ${fixture_payload}=    Get Fixture From Collection   theaters    base_valid_theater
+    # Garante limpeza prévia (caso tenha sobrado de outro teste)
+    Remove Theater And Related Data    ${fixture_payload}[name]
+    
+    # Insere a sala que será o "alvo" da atualização
+    ${theater_id_to_update}=    Insert Theater Directly Into DB    ${fixture_payload}
+    Should Not Be Equal    ${theater_id_to_update}    ${None}    msg=Falha ao inserir sala pré-requisito no DB
+    Log    Sala alvo para atualização criada com ID: ${theater_id_to_update}
+
+    # Prepara o Teardown para limpar esta sala
+    @{ids_to_clean}=       Create List    ${theater_id_to_update}
+    Set Test Variable      @{THEATER_ID_LIST}    @{ids_to_clean}
+    # --- FIM SETUP INLINE ---
+
+    # --- PREPARAÇÃO DA AÇÃO ---
+    # Gera um novo nome dinâmico para a atualização
+    ${random_suffix}=      Generate Random String    8    [LOWER]
+    ${novo_nome}=          Set Variable              ${fixture_payload}[name] - ATUALIZADA - ${random_suffix}
+    # Cria o payload de atualização (apenas com o campo a ser mudado)
+    &{update_payload}=     Create Dictionary    name=${novo_nome}
+    # --- FIM PREPARAÇÃO ---
+
+    # Ação: Tenta atualizar a sala
+    ${response}=    Update Theater
+    ...    theater_id=${theater_id_to_update}
+    ...    payload=${update_payload}
+    ...    admin_headers=${admin_headers}
+    
+    Log To Console    ${response.json()}
+
+    # Validação (Assumindo wrapper 'success/data' e reutilizando o schema)
+    Validate Successful API Response
+    ...    response=${response}
+    ...    expected_status_code=200
+    ...    schema_file=${THEATER_UPDATE_SCHEMA}
+
+    # Validação Extra de Valores (Acessando dentro de 'data')
+    ${body}=    Set Variable    ${response.json()}
+    Should Be Equal As Strings    ${body['data']['name']}    ${novo_nome}
+    # Valida que o ID permaneceu o mesmo
+    Should Be Equal As Strings    ${body['data']['_id']}   ${theater_id_to_update}
 
 *** Keywords ***
 Setup Theaters For Test

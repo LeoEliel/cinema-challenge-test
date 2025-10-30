@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "description": "Indica se a atualização da sala foi bem-sucedida",
+      "type": "boolean",
+      "const": true
+    },
+    "data": {
+      "description": "Contém os dados da sala atualizada",
+      "type": "object",
+      "properties": {
+        "_id": { "type": "string" },
+        "name": { "type": "string" },
+        "capacity": { "type": "integer" },
+        "type": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "id": { "type": "string" }
+      },
+      "required": [
+        "_id",
+        "name",
+        "capacity",
+        "type",
+        "updatedAt",
+        "createdAt",
+        "id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": ["success", "data"],
+  "additionalProperties": false
+}
