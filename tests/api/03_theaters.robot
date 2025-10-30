@@ -491,6 +491,40 @@ CN-52 (API): Tentar criar uma nova sala (Theater) como usuário normal
     # 1. Cleanup Theaters... (encontrará lista vazia, pulará)
     # 2. Cleanup User... (encontrará ${CLEANUP_EMAIL} do setup, limpará o usuário)
 
+CN-51 (API): Tentar criar uma nova sala (Theater) sem autenticação
+    [Tags]    API    Negative    Security    TheatersCRUD    CTC-026_Negative    CN-51
+    [Documentation]
+    ...              Dado que eu não estou autenticado
+    ...              Quando eu envio uma requisição POST para o endpoint "/theaters" com dados de uma nova sala
+    ...              Então a resposta deve ter o status code 401
+    ...              E o corpo da resposta deve conter uma mensagem de erro de "Não autorizado"
+    # [Setup] Nenhum [Setup] específico é usado, então o Test Setup padrão (API Test Setup) roda.
+
+    # --- PREPARAÇÃO DO TEARDOWN ---
+    # Garante que as variáveis de limpeza existam e estejam vazias
+    # para que o Teardown Padrão da suíte (Run Keywords... AND...) execute sem falhas.
+    @{EMPTY_LIST}=    Create List
+    Set Test Variable    @{THEATER_ID_LIST}    @{EMPTY_LIST}
+    Set Test Variable    ${CLEANUP_EMAIL}      ${None}
+    # --- FIM PREPARAÇÃO DO TEARDOWN ---
+
+    # --- PREPARAÇÃO DA AÇÃO ---
+    # Carrega o payload base da sala do fixture
+    ${fixture_payload}=    Get Fixture From Collection   theaters    base_valid_theater
+    # (Não precisamos de nome dinâmico, pois a API deve falhar antes de verificar duplicidade)
+    # --- FIM PREPARAÇÃO ---
+
+    # Ação: Tenta criar a sala SEM passar o header 'admin_headers'
+    ${response}=    Create Theater
+    ...    payload=${fixture_payload}
+    ...    admin_headers=${None}     # Envia headers vazios
+
+    # Validação: Usa a keyword de validação de erro e o schema 401
+    Validate Error API Response
+    ...    response=${response}
+    ...    expected_status_code=401
+    ...    schema_file=${UNAUTHORIZED_ERROR_SCHEMA}     # Reutiliza o schema de 401
+
 *** Keywords ***
 Setup Theaters For Test
     [Documentation]    Carrega dados do fixture, limpa dados antigos, insere sala(s) via DB
