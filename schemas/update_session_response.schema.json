@@ -1,0 +1,45 @@
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "description": "Indica se a atualização da sessão foi bem-sucedida",
+      "type": "boolean",
+      "const": true
+    },
+    "data": {
+      "description": "Contém os dados da sessão atualizada",
+      "type": "object",
+      "properties": {
+        "_id": { "type": "string" },
+        "movie": {
+          "description": "O ID (string) do filme associado",
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{24}$"
+        },
+        "theater": {
+          "description": "O ID (string) da sala associada",
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{24}$"
+        },
+        "datetime": { "type": "string", "format": "date-time" },
+        "fullPrice": { "type": "number" },
+        "halfPrice": { "type": "number" },
+        "seats": {
+          "description": "A API de PUT retorna um array de assentos vazio",
+          "type": "array",
+          "maxItems": 0
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "id": { "type": "string" }
+      },
+      "required": [
+        "_id", "movie", "theater", "datetime", "fullPrice", "halfPrice",
+        "seats", "createdAt", "updatedAt", "id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": ["success", "data"],
+  "additionalProperties": false
+}

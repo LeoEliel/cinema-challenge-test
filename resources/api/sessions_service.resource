@@ -36,7 +36,7 @@ Create Session
     ${response}=    POST To    /sessions    ${payload}    ${admin_headers}
     RETURN    ${response}
 
-Update Session
+Update Sessions
     [Documentation]    Atualiza uma sessão existente (PUT /sessions/{id}). Requer token de Admin.
     [Arguments]    ${session_id}    ${payload}    ${admin_headers}
     

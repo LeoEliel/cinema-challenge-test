@@ -26,8 +26,10 @@ ${USER_FIXTURES}          ../../fixtures/users.json
 ${SESSION_SCHEMA_LIST}          list_sessions_response.schema.json
 ${SESSION_SCHEMA_DETAIL}        get_session_details_response.schema.json
 ${SESSION_NOT_FOUND_SCHEMA}     session_not_found_error.schema.json
-${SESSION_CREATE_SCHEMA}  create_session_response.schema.json
-${FORBIDDEN_ERROR_SCHEMA}     forbidden_error_response.schema.json
+${SESSION_CREATE_SCHEMA}        create_session_response.schema.json
+${FORBIDDEN_ERROR_SCHEMA}      forbidden_error_response.schema.json
+${UNAUTHORIZED_ERROR_SCHEMA}    unauthorized_error_response.schema.json
+${SESSION_UPDATE_SCHEMA}        update_session_response.schema.json 
 
 
 ${NON_EXISTENT_SESSION_ID}    111111111111111111111111     # ID que garantidamente não existe
@@ -201,6 +203,84 @@ CN-95 (API): Tentar criar sessão como usuário normal (Forbidden)
     ...    response=${response}
     ...    expected_status_code=403
     ...    schema_file=${FORBIDDEN_ERROR_SCHEMA}     # Reutiliza o schema de 403
+
+CN-96 (API): Tentar criar sessão sem autenticação (Unauthorized)
+    [Tags]    API    Negative    Security    SessionsCRUD    CTC-047    CN-96
+    [Documentation]
+    ...              Dado que um filme e uma sala existem
+    ...              Quando envio uma requisição POST para "/sessions" sem um token de autenticação
+    ...              Então a resposta deve ter o status code 401
+    ...              E o corpo da resposta deve conter a mensagem "Not authorized to access this route"
+    # Setup: Cria 1 Filme e 1 Sala (mas nenhum token)
+    [Setup]    Setup Movie and Theater For Test
+
+    # --- PREPARAÇÃO DA AÇÃO ---
+    # Carrega o payload base da sessão
+    ${session_payload_base}=    Get Fixture From Collection   sessions    base_valid_session
+    # Preenche os IDs que foram criados no Setup
+    ${payload_final}=    Set To Dictionary    ${session_payload_base}
+    ...    movie=${CREATED_MOVIE_ID}
+    ...    theater=${CREATED_THEATER_ID}
+    # --- FIM PREPARAÇÃO ---
+
+    # Ação: Tenta criar a sessão SEM headers (headers=${EMPTY})
+    ${response}=    Create Session
+    ...    payload=${payload_final}
+    ...    admin_headers=${None}     # Envia headers vazios
+
+    # Validação: Usa a keyword de validação de erro e o schema 401
+    Validate Error API Response
+    ...    response=${response}
+    ...    expected_status_code=401
+    ...    schema_file=${UNAUTHORIZED_ERROR_SCHEMA}     # Reutiliza o schema de 401
+
+    # [Teardown]: O 'Teardown Completo' padrão cuidará de limpar
+    # o Filme e a Sala criados pelo [Setup].
+
+CN-97 (API): Admin atualiza sessão com sucesso
+    [Tags]    API    AdminOnly    SessionsCRUD    CTC-48_API    CN-97
+    [Documentation]
+    ...              Dado que estou autenticado como Admin e uma sessão existe
+    ...              Quando envio PUT para "/sessions/{id_da_sessao}" com dados atualizados
+    ...              Então a resposta deve ter status 200 OK
+    ...              E o corpo da resposta deve conter os dados da sessão atualizados
+    # Setup: Cria 1 Filme, 1 Sala, 1 Sessão E um Token de Admin
+    [Setup]    Run Keywords
+    ...    Setup Para Teste de Sessão Simples    # Cria as 3 entidades e define ${CREATED_SESSION_ID}, etc.
+    ...    AND    Generate Admin Token For Test     # Define ${ADMIN_TOKEN_BEARER}
+
+    # --- PREPARAÇÃO DA AÇÃO ---
+    # Define o payload com o novo preço
+    ${novo_preco}=         Set Variable    99.99
+    &{update_payload}=     Create Dictionary    fullPrice=${novo_preco}
+    
+    # Monta os headers com o token de Admin
+    &{admin_headers}=      Create Dictionary    Authorization=${ADMIN_TOKEN_BEARER}
+    # --- FIM PREPARAÇÃO ---
+
+    # Ação: Tenta atualizar a sessão
+    ${response}=    Update Sessions
+    ...    session_id=${CREATED_SESSION_ID}
+    ...    payload=${update_payload}
+    ...    admin_headers=${admin_headers}
+
+    # --- LOG DE DESCOBERTA ---
+    # Loga a resposta real ANTES de tentar validar
+    Log To Console    \n\n--- RESPOSTA REAL (CN-97 PUT /sessions) ---\nStatus: ${response.status_code}\nCorpo: ${response.text}\n--------------------------------------\n
+
+    # Validação (TEMPORÁRIA - Apenas Status)
+    # Esperamos 200 OK
+    Should Be Equal As Strings    ${response.status_code}    200
+
+    # Validação do Schema (ESPERAMOS QUE FALHE E MOSTRE O ERRO)
+    Validate Successful API Response
+    ...    response=${response}
+    ...    expected_status_code=200
+    ...    schema_file=${SESSION_UPDATE_SCHEMA}     # Tenta validar contra o schema mockado
+
+    # PREPARA O TEARDOWN (Comentado até o schema ser válido)
+    # ${body}=    Set Variable    ${response.json()}
+    # Should Be Equal As Strings    ${body['data']['fullPrice']}    ${novo_preco}
 
 *** Keywords ***
 # --- Bloco 1: Keywords de Teardown (Limpam listas) ---
@@ -395,3 +475,22 @@ Setup Para Teste de Permissão (Sessão)
     Set Test Variable    ${CREATED_THEATER_ID}   ${theater_id}
 
     Log    Setup de permissão completo.
+
+Setup Movie and Theater For Test
+    [Documentation]    Setup que cria 1 Filme e 1 Sala.
+    ...              Define: ${CREATED_MOVIE_ID}, ${CREATED_THEATER_ID}
+    ...              e as variáveis de teardown (@{MOVIE_ID_LIST}, @{THEATER_ID_LIST})
+    
+    API Test Setup
+
+    Initialize Teardown Lists
+    
+    # 1. Cria Filme (Keyword local de Bloco 2)
+    ${movie_id}=      Create Test Movie      base_valid_movie
+    Set Test Variable    ${CREATED_MOVIE_ID}    ${movie_id}
+    
+    # 2. Cria Sala (Keyword local de Bloco 2)
+    ${theater_id}=    Create Test Theater    base_valid_theater
+    Set Test Variable    ${CREATED_THEATER_ID}   ${theater_id}
+
+    Log    Setup (Filme/Sala) completo.
