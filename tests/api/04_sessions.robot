@@ -23,7 +23,8 @@ ${THEATER_FIXTURES}       ../../fixtures/theaters.json
 ${USER_FIXTURES}          ../../fixtures/users.json
 
 # Schemas (Nomes dos arquivos que estarão em /schemas)
-${SESSION_SCHEMA_LIST}    list_sessions_response.schema.json
+${SESSION_SCHEMA_LIST}      list_sessions_response.schema.json
+${SESSION_SCHEMA_DETAIL}    get_session_details_response.schema.json
 
 *** Test Cases ***
 CN-34 (CTC-13_API): Listar sessões filtrando por Filme
@@ -68,6 +69,29 @@ CN-34 (CTC-13_API): Listar sessões filtrando por Filme
     END
     Log    Validação concluída: Apenas sessões do Filme A foram retornadas.
 
+CTC-201_API (API): Buscar detalhes de sessão por ID com sucesso
+    [Tags]    API    Smoke    Sessions    US-SESSION-001    CTC-201_API
+    [Documentation]
+    ...              Dado que uma sessão específica existe
+    ...              Quando eu envio uma requisição GET para "/sessions/{id_da_sessao}"
+    ...              Então a resposta deve ter o status code 200
+    ...              E o corpo da resposta deve conter os detalhes completos da sessão
+    [Setup]    Setup Para Teste de Sessão Simples
+
+    Should Not Be Empty    ${CREATED_SESSION_ID}    msg=ID da Sessão não foi criado/definido no Setup.
+    Log    Sessão alvo para GET: ${CREATED_SESSION_ID}
+
+    ${response}=    Get Session By ID    session_id=${CREATED_SESSION_ID}
+
+    Validate Successful API Response
+    ...    response=${response}
+    ...    expected_status_code=200
+    ...    schema_file=${SESSION_SCHEMA_DETAIL}
+
+    ${body}=    Set Variable    ${response.json()}
+    Should Be Equal As Strings    ${body['data']['_id']}         ${CREATED_SESSION_ID}
+    Should Be Equal As Strings    ${body['data']['movie']['_id']}       ${CREATED_MOVIE_ID}
+    Should Be Equal As Strings    ${body['data']['theater']['_id']}    ${CREATED_THEATER_ID}
 *** Keywords ***
 # --- Bloco 1: Keywords de Teardown (Limpam listas) ---
 # (O Test Teardown global chama estas)
@@ -202,3 +226,17 @@ Setup Para Teste de Filtro de Sessão
     # Define variáveis para o Teste
     Set Test Variable    ${MOVIE_A_ID}    ${movie_A_id}
     Set Test Variable    ${MOVIE_B_ID}    ${movie_B_id}
+
+# --- Bloco 3: Keywords Orquestradoras de Setup (Usadas nos Test Cases) ---
+
+Setup Para Teste de Sessão Simples
+    [Documentation]    Setup para testes de Sessão. Cria 1 Filme, 1 Sala, 1 Sessão.
+    API Test Setup
+    Initialize Teardown Lists
+    ${movie_id}=      Create Test Movie      base_valid_movie
+    ${theater_id}=    Create Test Theater    base_valid_theater
+    ${session_id}=    Create Test Session    base_valid_session    ${movie_id}    ${theater_id}
+    
+    Set Test Variable    ${CREATED_MOVIE_ID}    ${movie_id}
+    Set Test Variable    ${CREATED_THEATER_ID}   ${theater_id}
+    Set Test Variable    ${CREATED_SESSION_ID}   ${session_id}

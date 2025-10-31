@@ -1,0 +1,79 @@
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "description": "Indica se a busca foi bem-sucedida",
+      "type": "boolean",
+      "const": true
+    },
+    "data": {
+      "description": "Contém os dados detalhados da sessão",
+      "$ref": "#/definitions/session_details"
+    }
+  },
+  "required": ["success", "data"],
+  "additionalProperties": false,
+
+  "definitions": {
+    "session_details": {
+      "description": "Objeto representando uma sessão detalhada",
+      "type": "object",
+      "properties": {
+        "_id": { "type": "string" },
+        "movie": {
+          "description": "ID do filme (string), objeto populado (object), ou null se deletado",
+          "type": ["string", "object", "null"]
+        },
+        "theater": {
+          "description": "Objeto da sala (theater) populado",
+          "type": ["object", "string", "null"],
+          "$ref": "#/definitions/theater_populated"
+        },
+        "datetime": { "type": "string", "format": "date-time" },
+        "fullPrice": { "type": "number" },
+        "halfPrice": { "type": "number" },
+        "seats": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/seat" }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "__v": { "type": "integer" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "id": { "type": "string" }
+      },
+      "required": [
+        "_id", "movie", "theater", "datetime", "fullPrice", "halfPrice",
+        "seats", "createdAt", "id"
+      ],
+      "additionalProperties": false
+    },
+
+    "theater_populated": {
+      "description": "Objeto da sala (theater) quando populado",
+      "type": "object",
+      "properties": {
+        "_id": { "type": "string" },
+        "name": { "type": "string" },
+        "capacity": { "type": "integer" },
+        "type": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "__v": { "type": "integer" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "id": { "type": "string" }
+      },
+      "required": ["_id", "name", "capacity", "type", "createdAt", "id"]
+    },
+
+    "seat": {
+      "description": "Objeto representando um assento embutido",
+      "type": "object",
+      "properties": {
+        "row": { "type": "string" },
+        "number": { "type": "integer" },
+        "status": { "type": "string", "enum": ["available", "reserved", "locked"] }
+      },
+      "required": ["row", "number", "status"],
+      "additionalProperties": false
+    }
+  }
+}
