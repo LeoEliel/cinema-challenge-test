@@ -319,6 +319,74 @@ CN-98 (API): Admin tenta atualizar sessão com ID inexistente (404)
     # [Teardown]: O 'Teardown Completo' padrão rodará, verá as listas vazias
     # (graças ao 'Initialize Teardown Lists') e apenas fechará a sessão HTTP.
 
+CN-99 (API): Tentar atualizar sessão como usuário normal (Forbidden)
+    [Tags]    API    Negative    AdminOnly    SessionsCRUD    CTC-050_API    CN-99
+    [Documentation]
+    ...              Dado que estou autenticado como usuário NORMAL e uma sessão existe
+    ...              Quando envio PUT para "/sessions/{id}" com o token de usuário normal
+    ...              Então a resposta deve ter status 403 Forbidden
+    # Setup: Roda AMBOS os setups:
+    # 1. Cria 1 Filme, 1 Sala, 1 Sessão (define ${CREATED_..._ID} e listas de teardown)
+    # 2. Cria 1 Usuário Normal (define ${VALID_TOKEN} e ${USER_EMAIL})
+    [Setup]    Run Keywords
+    ...    Setup Para Teste de Sessão Simples
+    ...    AND
+    ...    Setup User And Get Valid Token
+
+    # --- PREPARAÇÃO DA AÇÃO ---
+    # Monta headers com o token de USUÁRIO NORMAL (obtido do Setup)
+    &{normal_user_headers}=    Create Dictionary    Authorization=Bearer ${VALID_TOKEN}
+    # Monta um payload de atualização válido (o conteúdo não importa)
+    &{update_payload}=    Create Dictionary    fullPrice=1.99
+    # --- FIM PREPARAÇÃO ---
+
+    # Ação: Tenta atualizar a sessão (ID obtido do Setup)
+    ${response}=    Update Sessions
+    ...    session_id=${CREATED_SESSION_ID}
+    ...    payload=${update_payload}
+    ...    admin_headers=${normal_user_headers}     # Passando o token normal
+
+    # Validação: Usa a keyword de validação de erro e o schema 403
+    Validate Error API Response
+    ...    response=${response}
+    ...    expected_status_code=403
+    ...    schema_file=${FORBIDDEN_ERROR_SCHEMA}     # Reutiliza o schema de 403
+
+    # [Teardown]: O 'Teardown Completo' padrão cuidará de limpar
+    # as 4 entidades (Sessão, Filme, Sala, Usuário) criadas no [Setup].
+
+CN-100 (API): Tentar atualizar sessão como usuário normal (Forbidden)
+    [Tags]    API    Negative    AdminOnly    SessionsCRUD    CTC-051_API    CN-100
+    [Documentation]
+    ...              Dado que estou autenticado como usuário NORMAL e uma sessão existe
+    ...              Quando envio PUT para "/sessions/{id_da_sessao}" com dados atualizados
+    ...              Então a resposta deve ter status 403 Forbidden
+    # Setup: Cria 1 Filme, 1 Sala, 1 Sessão E um Token de Usuário Normal
+    [Setup]    Setup Para Teste de Permissão (Sessão)
+
+    # --- PREPARAÇÃO DA AÇÃO ---
+    # Monta os headers com o token de USUÁRIO NORMAL (obtido do setup)
+    &{normal_user_headers}=    Create Dictionary    Authorization=Bearer ${NORMAL_USER_TOKEN_BEARER}
+    # Monta um payload de atualização válido (o conteúdo não importa)
+    &{update_payload}=     Create Dictionary    fullPrice=1.99
+    # --- FIM PREPARAÇÃO ---
+
+    # Ação: Tenta atualizar a sessão (ID obtido do setup)
+    ${response}=    Update Sessions
+    ...    session_id=${CREATED_SESSION_ID}
+    ...    payload=${update_payload}
+    ...    admin_headers=${normal_user_headers}     # Passando o token normal
+
+    # Validação: Usa a keyword de validação de erro e o schema 403
+    Validate Error API Response
+    ...    response=${response}
+    ...    expected_status_code=403
+    ...    schema_file=${FORBIDDEN_ERROR_SCHEMA}     # Reutiliza o schema de 403
+
+    # [Teardown]: O 'Teardown Completo' padrão cuidará de limpar
+    # a Sessão, o Filme, a Sala e o Usuário criados pelo [Setup].
+
+
 *** Keywords ***
 # --- Bloco 1: Keywords de Teardown (Limpam listas) ---
 # (O Test Teardown global chama estas)
@@ -488,12 +556,13 @@ Setup Para Teste de Admin (Sessão)
     ${theater_id}=    Create Test Theater    base_valid_theater
     Set Test Variable    ${CREATED_THEATER_ID}   ${theater_id}
 Setup Para Teste de Permissão (Sessão)
-    [Documentation]    Setup para testes de permissão. Cria 1 Filme, 1 Sala, e 1 Usuário Normal com Token.
-    ...              Define: ${NORMAL_USER_TOKEN_BEARER}, ${CREATED_MOVIE_ID}, ${CREATED_THEATER_ID}
-    ...              e as variáveis de teardown (${USER_EMAIL}, @{MOVIE_ID_LIST}, @{THEATER_ID_LIST})
+    [Documentation]    Setup para testes de permissão (401/403). Cria 1 Filme, 1 Sala, 1 Sessão
+    ...              e 1 Usuário Normal com Token.
+    ...              Define: ${NORMAL_USER_TOKEN_BEARER}, ${CREATED_SESSION_ID}
+    ...              e todas as 4 variáveis de teardown.
     
     API Test Setup
-
+    
     Initialize Teardown Lists
     
     # 1. Cria Token de Usuário Normal (Keyword global de common.resource)
@@ -504,13 +573,19 @@ Setup Para Teste de Permissão (Sessão)
     # 2. Cria Filme (Keyword local de Bloco 2)
     # (Esta keyword já define @{MOVIE_ID_LIST} para o teardown)
     ${movie_id}=      Create Test Movie      base_valid_movie
-    Set Test Variable    ${CREATED_MOVIE_ID}    ${movie_id}
     
     # 3. Cria Sala (Keyword local de Bloco 2)
     # (Esta keyword já define @{THEATER_ID_LIST} para o teardown)
     ${theater_id}=    Create Test Theater    base_valid_theater
-    Set Test Variable    ${CREATED_THEATER_ID}   ${theater_id}
-
+    
+    # 4. Cria a Sessão (Keyword local de Bloco 2)
+    # (Esta keyword já define @{SESSION_ID_LIST} para o teardown)
+    ${session_id}=    Create Test Session    base_valid_session    ${movie_id}    ${theater_id}
+    
+    # Define variáveis para o Teste
+    Set Test Variable    ${CREATED_SESSION_ID}    ${session_id}
+    Set Test Variable    ${CREATED_MOVIE_ID}    ${movie_id}
+    Set Test Variable    ${CREATED_THEATER_ID}    ${theater_id}
     Log    Setup de permissão completo.
 
 Setup Movie and Theater For Test

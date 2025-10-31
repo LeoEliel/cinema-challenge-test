@@ -8,6 +8,15 @@
     },
     "data": {
       "description": "Contém os dados da sessão atualizada",
+      "$ref": "#/definitions/session_updated"
+    }
+  },
+  "required": ["success", "data"],
+  "additionalProperties": false,
+
+  "definitions": {
+    "session_updated": {
+      "description": "Objeto representando a sessão atualizada",
       "type": "object",
       "properties": {
         "_id": { "type": "string" },
@@ -25,9 +34,8 @@
         "fullPrice": { "type": "number" },
         "halfPrice": { "type": "number" },
         "seats": {
-          "description": "A API de PUT retorna um array de assentos vazio",
-          "type": "array",
-          "maxItems": 0
+          "description": "A API de PUT retorna um array de assentos (geralmente vazio)",
+          "type": "array"
         },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" },
@@ -39,7 +47,5 @@
       ],
       "additionalProperties": false
     }
-  },
-  "required": ["success", "data"],
-  "additionalProperties": false
+  }
 }
