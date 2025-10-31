@@ -1,0 +1,64 @@
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "description": "Indica se a criação da sessão foi bem-sucedida",
+      "type": "boolean",
+      "const": true
+    },
+    "data": {
+      "description": "Contém os dados da sessão recém-criada",
+      "$ref": "#/definitions/session_created"
+    }
+  },
+  "required": ["success", "data"],
+  "additionalProperties": false,
+
+  "definitions": {
+    "session_created": {
+      "description": "Objeto representando a sessão recém-criada",
+      "type": "object",
+      "properties": {
+        "_id": { "type": "string" },
+        "movie": {
+          "description": "O ID (string) do filme associado",
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{24}$"
+        },
+        "theater": {
+          "description": "O ID (string) da sala associada",
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{24}$"
+        },
+        "datetime": { "type": "string", "format": "date-time" },
+        "fullPrice": { "type": "number" },
+        "halfPrice": { "type": "number" },
+        "seats": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/seat" }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "__v": { "type": "integer" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "id": { "type": "string" }
+      },
+      "required": [
+        "_id", "movie", "theater", "datetime", "fullPrice", "halfPrice",
+        "seats", "createdAt", "updatedAt", "__v", "id"
+      ],
+      "additionalProperties": false
+    },
+
+    "seat": {
+      "description": "Objeto representando um assento embutido",
+      "type": "object",
+      "properties": {
+        "row": { "type": "string" },
+        "number": { "type": "integer" },
+        "status": { "type": "string", "enum": ["available", "reserved", "locked"] }
+      },
+      "required": ["row", "number", "status"],
+      "additionalProperties": false
+    }
+  }
+}

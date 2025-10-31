@@ -1,0 +1,101 @@
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "description": "Indica se a busca foi bem-sucedida",
+      "type": "boolean",
+      "const": true
+    },
+    "count": {
+      "description": "Número total de sessões encontradas",
+      "type": "integer",
+      "minimum": 0
+    },
+    "pagination": {
+      "description": "Detalhes da paginação (pode estar vazio ou conter 'next')",
+      "type": "object",
+      "properties": {
+        "next": {
+          "description": "Informações sobre a próxima página (opcional)",
+          "type": "object",
+          "properties": {
+            "page": { "type": "integer", "minimum": 1 },
+            "limit": { "type": "integer", "minimum": 1 }
+          },
+          "required": ["page", "limit"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "data": {
+      "description": "Lista de sessões encontradas na página atual",
+      "type": "array",
+      "items": { "$ref": "#/definitions/session" }
+    }
+  },
+  "required": ["success", "count", "pagination", "data"],
+  "additionalProperties": false,
+
+  "definitions": {
+    "session": {
+      "description": "Objeto representando uma sessão",
+      "type": "object",
+      "properties": {
+        "_id": { "type": "string" },
+        "movie": {
+          "description": "ID do filme, objeto populado, ou null",
+          "type": ["string", "object", "null"] 
+        },
+        "theater": {
+          "description": "ID da sala ou objeto populado (com base na resposta real)",
+          "type": ["object", "string", "null"],
+          "oneOf": [
+            { "$ref": "#/definitions/theater_populated" },
+            { "type": "string" },
+            { "type": "null" }
+          ]
+        },
+        "datetime": { "type": "string", "format": "date-time" },
+        "fullPrice": { "type": "number" },
+        "halfPrice": { "type": "number" },
+        "seats": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/seat" }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "__v": { "type": "integer" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "id": { "type": "string" }
+      },
+      "required": [
+        "_id", "movie", "theater", "datetime", "fullPrice", "halfPrice",
+        "seats", "createdAt", "id"
+      ],
+      "additionalProperties": false
+    },
+
+    "theater_populated": {
+        "description": "Objeto da sala (theater) quando populado na resposta",
+        "type": "object",
+        "properties": {
+            "_id": { "type": "string" },
+            "name": { "type": "string" },
+            "type": { "type": "string" },
+            "id": { "type": "string" }
+        },
+        "required": ["_id", "name", "type", "id"]
+    },
+
+    "seat": {
+      "description": "Objeto representando um assento embutido",
+      "type": "object",
+      "properties": {
+        "row": { "type": "string" },
+        "number": { "type": "integer" },
+        "status": { "type": "string", "enum": ["available", "reserved", "locked"] }
+      },
+      "required": ["row", "number", "status"],
+      "additionalProperties": false
+    }
+  }
+}

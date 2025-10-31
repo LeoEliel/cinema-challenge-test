@@ -76,19 +76,19 @@ Setup Movies For Test
     END
 
     # Cria a lista para guardar os IDs criados neste setup
-    @{ids_created_in_setup}=    Create List
+    @{movies_ids_created}=    Create List
 
     # Insere os filmes via DB e guarda os IDs
     FOR    ${element}    IN    @{data_list}
         Log    Inserindo Filme no DB: ${element}[title]
         ${id_movie}=    Insert Movie Directly Into DB    ${element}     # Keyword do database_manager
         Should Not Be Equal    ${id_movie}    ${None}    msg=Falha ao inserir filme '${element}[title]' no DB
-        Append To List    ${ids_created_in_setup}    ${id_movie}
+        Append To List    ${movies_ids_created}    ${id_movie}
     END
 
     # Define a lista de IDs como VARIÁVEL DE TESTE para ser usada pelo Test Teardown
-    Set Test Variable    @{MOVIE_ID_LIST}    @{ids_created_in_setup}
-    Log    IDs dos filmes criados para este teste (@{MOVIE_ID_LIST}): @{ids_created_in_setup}
+    Set Test Variable    @{ID_MOVIES_LIST}    @{movies_ids_created}
+    Log    IDs dos filmes criados para este teste (@{ID_MOVIES_LIST}): @{movies_ids_created}
 
     # 1. Cria o token de Admin -> ${GENERATED_ADMIN_TOKEN_FOR_DEBUG}
     Verificar Geração de Token de Admin
@@ -98,8 +98,8 @@ Setup Movies For Test
 API Test Teardown For Movie Collection
     #[Arguments]        ${MOVIE_ID_LIST}=${EMPTY}
     [Documentation]    Fecha a sessão de API e remove dados de usuário
-    IF    @{MOVIE_ID_LIST}
-        FOR    ${index}    ${element}    IN ENUMERATE  @{MOVIE_ID_LIST}
+    IF    @{ID_MOVIES_LIST}
+        FOR    ${index}    ${element}    IN ENUMERATE  @{ID_MOVIES_LIST}
             Log   Removendo Filme >>> ${index}: ${element}
             Remove Movie And Related Data    ${element}
             
