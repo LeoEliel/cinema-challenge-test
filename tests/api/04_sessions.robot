@@ -25,7 +25,8 @@ ${USER_FIXTURES}          ../../fixtures/users.json
 # Schemas (Nomes dos arquivos que estarão em /schemas)
 ${SESSION_SCHEMA_LIST}          list_sessions_response.schema.json
 ${SESSION_SCHEMA_DETAIL}        get_session_details_response.schema.json
-${SESSION_NOT_FOUND_SCHEMA}     session_not_found_error.schema.json     # <-- NOVO SCHEMA
+${SESSION_NOT_FOUND_SCHEMA}     session_not_found_error.schema.json
+${SESSION_CREATE_SCHEMA}  create_session_response.schema.json   
 
 
 ${NON_EXISTENT_SESSION_ID}    111111111111111111111111     # ID que garantidamente não existe
@@ -121,6 +122,53 @@ CN-93 (API): Buscar detalhes de sessão por ID inexistente (404)
     ...    response=${response}
     ...    expected_status_code=404
     ...    schema_file=${SESSION_NOT_FOUND_SCHEMA}
+
+CN-94 (API): Admin cria nova sessão com sucesso
+    [Tags]    API    AdminOnly    SessionsCRUD    CN-94
+    [Documentation]
+    ...              Dado que estou autenticado como Admin
+    ...              Quando envio POST para "/sessions" com um payload válido
+    ...              Então a resposta deve ter status 201 Created
+    # Setup: Cria 1 Filme, 1 Sala E um Token de Admin
+    [Setup]    Run Keywords    
+    ...    API Test Setup
+    ...    AND
+    ...    Setup Para Teste de Admin (Sessão)
+
+
+    # --- PREPARAÇÃO DA AÇÃO ---
+    # Carrega o payload base da sessão do fixture
+    ${session_payload_base}=    Get Fixture From Collection   sessions    base_valid_session
+    # Preenche os IDs que foram criados no Setup
+    ${payload_final}=    Set To Dictionary    ${session_payload_base}
+    ...    movie=${CREATED_MOVIE_ID}
+    ...    theater=${CREATED_THEATER_ID}
+    
+    # Monta os headers com o token de Admin
+    &{admin_headers}=      Create Dictionary    Authorization=${ADMIN_TOKEN_BEARER}
+    # --- FIM PREPARAÇÃO ---
+
+    # Ação: Tenta criar a sessão
+    ${response}=    Create Session    payload=${payload_final}    admin_headers=${admin_headers}
+
+    # --- LOG DE DESCOBERTA ---
+    # Loga a resposta real ANTES de tentar validar
+    Log To Console    \n\n--- RESPOSTA REAL (CN-XX POST /sessions) ---\nStatus: ${response.status_code}\nCorpo: ${response.text}\n--------------------------------------\n
+
+    # Validação (TEMPORÁRIA - Apenas Status)
+    Should Be Equal As Strings    ${response.status_code}    201
+
+    # Validação do Schema (ESPERAMOS QUE FALHE E MOSTRE O ERRO)
+    Validate Successful API Response
+    ...    response=${response}
+    ...    expected_status_code=201
+    ...    schema_file=${SESSION_CREATE_SCHEMA}     # Tenta validar contra o schema mockado
+
+    # PREPARA O TEARDOWN (Comentado até o schema ser válido)
+    # ${body}=    Set Variable    ${response.json()}
+    # ${created_session_id}=    Set Variable    ${body['data']['_id']}
+    # Append To List    ${SESSION_ID_LIST}    ${created_session_id}
+    # Set Test Variable    @{SESSION_ID_LIST}
 
 *** Keywords ***
 # --- Bloco 1: Keywords de Teardown (Limpam listas) ---
@@ -273,3 +321,20 @@ Setup Para Teste de Sessão Simples
     Set Test Variable    ${CREATED_MOVIE_ID}    ${movie_id}
     Set Test Variable    ${CREATED_THEATER_ID}   ${theater_id}
     Set Test Variable    ${CREATED_SESSION_ID}   ${session_id}
+
+Setup Para Teste de Admin (Sessão)
+    [Documentation]    Setup para testes de Admin. Cria 1 Filme, 1 Sala, e Token de Admin.
+    ...              Define: ${ADMIN_TOKEN_BEARER}, ${CREATED_MOVIE_ID}, ${CREATED_THEATER_ID}
+    Initialize Teardown Lists
+    
+    # 1. Cria Token de Admin (Keyword global)
+    Generate Admin Token For Test
+    Log    Token de Admin (${ADMIN_TOKEN_BEARER}) gerado.
+    
+    # 2. Cria Filme (Keyword local)
+    ${movie_id}=      Create Test Movie      base_valid_movie
+    Set Test Variable    ${CREATED_MOVIE_ID}    ${movie_id}
+    
+    # 3. Cria Sala (Keyword local)
+    ${theater_id}=    Create Test Theater    base_valid_theater
+    Set Test Variable    ${CREATED_THEATER_ID}   ${theater_id}
