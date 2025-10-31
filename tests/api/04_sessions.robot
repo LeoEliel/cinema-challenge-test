@@ -26,10 +26,12 @@ ${USER_FIXTURES}          ../../fixtures/users.json
 ${SESSION_SCHEMA_LIST}          list_sessions_response.schema.json
 ${SESSION_SCHEMA_DETAIL}        get_session_details_response.schema.json
 ${SESSION_NOT_FOUND_SCHEMA}     session_not_found_error.schema.json
-${SESSION_CREATE_SCHEMA}  create_session_response.schema.json   
+${SESSION_CREATE_SCHEMA}  create_session_response.schema.json
+${FORBIDDEN_ERROR_SCHEMA}     forbidden_error_response.schema.json
 
 
 ${NON_EXISTENT_SESSION_ID}    111111111111111111111111     # ID que garantidamente não existe
+${ADMIN_EMAIL_FIXTURE}        admin@example.com
 
 *** Test Cases ***
 
@@ -153,7 +155,7 @@ CN-94 (API): Admin cria nova sessão com sucesso
 
     # --- LOG DE DESCOBERTA ---
     # Loga a resposta real ANTES de tentar validar
-    Log To Console    \n\n--- RESPOSTA REAL (CN-XX POST /sessions) ---\nStatus: ${response.status_code}\nCorpo: ${response.text}\n--------------------------------------\n
+    #Log To Console    \n\n--- RESPOSTA REAL (CN-XX POST /sessions) ---\nStatus: ${response.status_code}\nCorpo: ${response.text}\n--------------------------------------\n
 
     # Validação (TEMPORÁRIA - Apenas Status)
     Should Be Equal As Strings    ${response.status_code}    201
@@ -169,6 +171,36 @@ CN-94 (API): Admin cria nova sessão com sucesso
     # ${created_session_id}=    Set Variable    ${body['data']['_id']}
     # Append To List    ${SESSION_ID_LIST}    ${created_session_id}
     # Set Test Variable    @{SESSION_ID_LIST}
+
+CN-95 (API): Tentar criar sessão como usuário normal (Forbidden)
+    [Tags]    API    Negative    AdminOnly    SessionsCRUD    CTC-046    CN-95
+    [Documentation]
+    ...              Dado que estou autenticado como usuário NORMAL e um filme e sala existem
+    ...              Quando envio POST para "/sessions" com o token de usuário normal
+    ...              Então a resposta deve ter status 403 Forbidden
+    # Setup: Cria 1 Filme, 1 Sala E um Token de Usuário Normal
+    [Setup]    Setup Para Teste de Permissão (Sessão)
+
+    # --- PREPARAÇÃO DA AÇÃO ---
+    # Carrega o payload base da sessão
+    ${session_payload_base}=    Get Fixture From Collection   sessions    base_valid_session
+    # Preenche os IDs que foram criados no Setup
+    ${payload_final}=    Set To Dictionary    ${session_payload_base}
+    ...    movie=${CREATED_MOVIE_ID}
+    ...    theater=${CREATED_THEATER_ID}
+    
+    # Monta os headers com o token de USUÁRIO NORMAL (obtido do Setup)
+    &{normal_user_headers}=    Create Dictionary    Authorization=Bearer ${NORMAL_USER_TOKEN_BEARER}
+    # --- FIM PREPARAÇÃO ---
+
+    # Ação: Tenta criar a sessão
+    ${response}=    Create Session    payload=${payload_final}    admin_headers=${normal_user_headers}
+
+    # Validação: Usa a keyword de validação de erro e o schema 403
+    Validate Error API Response
+    ...    response=${response}
+    ...    expected_status_code=403
+    ...    schema_file=${FORBIDDEN_ERROR_SCHEMA}     # Reutiliza o schema de 403
 
 *** Keywords ***
 # --- Bloco 1: Keywords de Teardown (Limpam listas) ---
@@ -338,3 +370,28 @@ Setup Para Teste de Admin (Sessão)
     # 3. Cria Sala (Keyword local)
     ${theater_id}=    Create Test Theater    base_valid_theater
     Set Test Variable    ${CREATED_THEATER_ID}   ${theater_id}
+Setup Para Teste de Permissão (Sessão)
+    [Documentation]    Setup para testes de permissão. Cria 1 Filme, 1 Sala, e 1 Usuário Normal com Token.
+    ...              Define: ${NORMAL_USER_TOKEN_BEARER}, ${CREATED_MOVIE_ID}, ${CREATED_THEATER_ID}
+    ...              e as variáveis de teardown (${USER_EMAIL}, @{MOVIE_ID_LIST}, @{THEATER_ID_LIST})
+    
+    API Test Setup
+
+    Initialize Teardown Lists
+    
+    # 1. Cria Token de Usuário Normal (Keyword global de common.resource)
+    # (Esta keyword já define ${USER_EMAIL} para o teardown)
+    Setup User And Get Valid Token
+    Set Test Variable    ${NORMAL_USER_TOKEN_BEARER}    ${VALID_TOKEN}
+    
+    # 2. Cria Filme (Keyword local de Bloco 2)
+    # (Esta keyword já define @{MOVIE_ID_LIST} para o teardown)
+    ${movie_id}=      Create Test Movie      base_valid_movie
+    Set Test Variable    ${CREATED_MOVIE_ID}    ${movie_id}
+    
+    # 3. Cria Sala (Keyword local de Bloco 2)
+    # (Esta keyword já define @{THEATER_ID_LIST} para o teardown)
+    ${theater_id}=    Create Test Theater    base_valid_theater
+    Set Test Variable    ${CREATED_THEATER_ID}   ${theater_id}
+
+    Log    Setup de permissão completo.
