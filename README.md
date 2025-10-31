@@ -1,20 +1,6 @@
-Projeto de Automação de Testes - Cinema Challenge (PB AWS & AI for QE)
+# Projeto de Automação de Testes - Cinema Challenge (PB AWS & AI for QE)
 
-Este projeto contém a automação de testes de API para a aplicação "Cinema Challenge", desenvolvido com Robot Framework, Python e uma arquitetura focada em escalabilidade, reutilização e isolamento.
-
-## Apresentação Pessoal
-
-* **Nome:** [Seu Nome Completo]
-* **Idade:** [Sua Idade]
-* **Curso:** [Seu Curso]
-* **Semestre:** [Seu Semestre]
-* **Cidade:** [Sua Cidade]
-* *(Opcional: Descrição de aparência, conforme solicitado no desafio)*
-    * **Cor dos Olhos:** [Cor]
-    * **Cor dos Cabelos:** [Cor]
-    * **Cor da Pele:** [Cor]
-    * **Roupa Utilizada:** [Descrição]
-
+## Este projeto contém a automação de testes de API para a aplicação "Cinema Challenge", desenvolvido com Robot Framework, Python e uma arquitetura focada em escalabilidade, reutilização e isolamento.
 ---
 
 ## 1. Visão Geral e Estratégia
