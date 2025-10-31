@@ -256,17 +256,17 @@ def insert_theater_directly(theater: dict):
         raise e
 
 @keyword('Insert Session Directly Into DB')
-def insert_session_directly(session: dict, movie_data: dict, theater_data: dict):
+def insert_session_directly(session: dict, movie_id: str, theater_id: str):
     """Insere sessão diretamente no banco criando filme e sala antes. Use com cautela - prefira API."""
     print(f"Tentando inserir sessão diretamente no DB")
     try:
-        # Cria filme primeiro
-        movie_id = insert_movie_directly(movie_data)
-        print(f"-> Filme criado com ID: {movie_id}")
+        # # Cria filme primeiro
+        # movie_id = insert_movie_directly(movie_data)
+        # print(f"-> Filme criado com ID: {movie_id}")
         
-        # Cria sala depois
-        theater_id = insert_theater_directly(theater_data)
-        print(f"-> Sala criada com ID: {theater_id}")
+        # # Cria sala depois
+        # theater_id = insert_theater_directly(theater_data)
+        # print(f"-> Sala criada com ID: {theater_id}")
         
         # Cria sessão com os IDs
         doc = {

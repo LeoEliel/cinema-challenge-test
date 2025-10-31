@@ -5,8 +5,8 @@ Documentation    Suíte de testes de API para a feature de Autenticação.
 
 Resource    ../../resources/common.resource 
 
-Test Setup       API Test Setup
-Test Teardown     API Test Teardown For User Collection    ${MOVIE_ID_LIST}
+Test Setup        API Test Setup
+Test Teardown     API Test Teardown For User Collection
 
 *** Test Cases ***
 CTC-001_API (API): Registro de novo usuário com sucesso pela API
@@ -20,10 +20,10 @@ CTC-001_API (API): Registro de novo usuário com sucesso pela API
     ${fixture}        Get Fixture From Collection   users    valid_user_register
     ${endpoint}            Set Variable    /auth/register
     
-    Set Test Variable    ${MOVIE_ID_LIST}    ${fixture}[email]
+    Set Test Variable    ${user_email}    ${fixture}[email]
     
     # Garante que usuário a ser inserido não existe
-    Remove User And Related Data    ${MOVIE_ID_LIST}
+    Remove User And Related Data    ${user_email}
 
     # 3. Registra o usuário
     ${response}    Register User    ${fixture}
@@ -50,8 +50,8 @@ CTC-002_API (API): Tentativa de registro com e-mail já existente
     ${fixture}        Get Fixture From Collection   users    user_for_duplicate_email_test
     
     # 1. Dado (Given) - Usuário duplicado existe (feito abaixo Setup)
-    Set Test Variable    ${MOVIE_ID_LIST}    ${fixture}[email]
-    Remove User And Related Data    ${MOVIE_ID_LIST}
+    Set Test Variable    ${USER_EMAIL}    ${fixture}[email]
+    Remove User And Related Data    ${USER_EMAIL}
     ${user_id}        Insert User Directly Into DB    ${fixture}
     Should Not Be Equal    ${USER_ID}    ${EMPTY}
 
@@ -75,7 +75,7 @@ CTC-003_API (API): Tentativa de registro com formato de e-mail inválido
     # 1. Dado (Given) - Carrega os dados do fixture com email inválido
     ${fixture}        Get Fixture From Collection   users    user_with_invalid_email_format
 
-    Set Test Variable    ${MOVIE_ID_LIST}    ${EMPTY}
+    Set Test Variable    ${USER_EMAIL}    ${EMPTY}
 
     # 2. Quando (When) - Tenta registrar com o payload inválido
     ${response}=    Register User    ${fixture}
@@ -102,7 +102,7 @@ CTC-004_API (API): Login com credenciais válidas pela API
     # --- SETUP INLINE ---
     # 1. Dado (Given) - Garante que o usuário para login exista
     ${fixture}=    Get Fixture From Collection   users    valid_user_register
-    Set Test Variable        ${MOVIE_ID_LIST}     ${fixture}[email]
+    Set Test Variable        ${USER_EMAIL}     ${fixture}[email]
     
     # Pré-limpeza
     Remove User And Related Data    ${fixture}[email] 
@@ -140,7 +140,7 @@ CTC-005_API (API): Tentativa de login com credenciais inválidas pela API
     # Carrega os dados do fixture que será usado como base (usuário válido)
     ${fixture_user_data}=    Get Fixture From Collection   users    valid_user_register
     # Define o e-mail que será limpo pelo Teardown padrão
-    Set Test Variable        ${MOVIE_ID_LIST}     ${fixture_user_data}[email]
+    Set Test Variable        ${USER_EMAIL}     ${fixture_user_data}[email]
     # Garante que o usuário de teste exista, limpando qualquer versão anterior
     Remove User And Related Data    ${fixture_user_data}[email]
     # Insere o usuário de teste diretamente no banco de dados

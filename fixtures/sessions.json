@@ -2,14 +2,31 @@
   "base_valid_session": {
     "movie": "PLACEHOLDER_MOVIE_ID",
     "theater": "PLACEHOLDER_THEATER_ID",
-    "datetime": "2025-12-24T19:30:00.000Z",
-    "fullPrice": 19,
-    "halfPrice": 9.5
+    "datetime": "2025-12-01T20:00:00.000Z",
+    "fullPrice": 20,
+    "halfPrice": 10
   },
-  "session_missing_datetime": {
-     "movie": "PLACEHOLDER_MOVIE_ID",
-     "theater": "PLACEHOLDER_THEATER_ID",
-     "fullPrice": 21,
-     "halfPrice": 10.5
-  }
+  "three_sessions_for_filtering": [
+    {
+      "movie": "PLACEHOLDER_MOVIE_ID_A",
+      "theater": "PLACEHOLDER_THEATER_ID_A",
+      "datetime": "2025-12-10T18:00:00.000Z",
+      "fullPrice": 18,
+      "halfPrice": 9
+    },
+    {
+      "movie": "PLACEHOLDER_MOVIE_ID_A",
+      "theater": "PLACEHOLDER_THEATER_ID_B",
+      "datetime": "2025-12-10T21:00:00.000Z",
+      "fullPrice": 22,
+      "halfPrice": 11
+    },
+    {
+      "movie": "PLACEHOLDER_MOVIE_ID_B",
+      "theater": "PLACEHOLDER_THEATER_ID_A",
+      "datetime": "2025-12-11T19:00:00.000Z",
+      "fullPrice": 20,
+      "halfPrice": 10
+    }
+  ]
 }
