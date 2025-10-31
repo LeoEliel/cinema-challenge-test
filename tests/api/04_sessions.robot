@@ -282,6 +282,43 @@ CN-97 (API): Admin atualiza sessão com sucesso
     # ${body}=    Set Variable    ${response.json()}
     # Should Be Equal As Strings    ${body['data']['fullPrice']}    ${novo_preco}
 
+CN-98 (API): Admin tenta atualizar sessão com ID inexistente (404)
+    [Tags]    API    Negative    AdminOnly    SessionsCRUD    CTC-049_API    CN-98
+    [Documentation]
+    ...              Dado que estou autenticado como Admin
+    ...              Quando envio PUT para "/sessions/{id_inexistente}" com dados válidos
+    ...              Então a resposta deve ter status 404 Not Found
+    ...              E o corpo da resposta deve conter "Session not found"
+    # Setup: Gera um token de Admin
+    [Setup]    Generate Admin Token For Test
+
+    # Prepara o Teardown: Inicializa listas vazias para o Teardown Completo
+    Initialize Teardown Lists
+
+    # --- PREPARAÇÃO DA AÇÃO ---
+    # Monta os headers com o token de Admin
+    &{admin_headers}=    Create Dictionary    Authorization=${ADMIN_TOKEN_BEARER}
+    
+    # Prepara um payload de atualização válido (o conteúdo não importa, a API deve falhar no ID)
+    ${update_payload}=   Get Fixture From Collection   sessions    base_valid_session
+    # (Não precisamos preencher 'movie' ou 'theater' pois a API deve checar o ID da sessão primeiro)
+    # --- FIM PREPARAÇÃO ---
+
+    # Ação: Tenta atualizar uma sessão usando um ID inexistente
+    ${response}=    Update Sessions
+    ...    session_id=${NON_EXISTENT_SESSION_ID}
+    ...    payload=${update_payload}
+    ...    admin_headers=${admin_headers}
+
+    # Validação: Usa a keyword de validação de erro e o schema 404
+    Validate Error API Response
+    ...    response=${response}
+    ...    expected_status_code=404
+    ...    schema_file=${SESSION_NOT_FOUND_SCHEMA}     # Reutiliza o schema de 404
+
+    # [Teardown]: O 'Teardown Completo' padrão rodará, verá as listas vazias
+    # (graças ao 'Initialize Teardown Lists') e apenas fechará a sessão HTTP.
+
 *** Keywords ***
 # --- Bloco 1: Keywords de Teardown (Limpam listas) ---
 # (O Test Teardown global chama estas)

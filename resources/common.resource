@@ -156,6 +156,7 @@ Setup Keyword Args For Generic Request
 Generate Admin Token For Test
     [Documentation]    Garante que usuário admin exista (via fixtures) e gera token na variável de teste ${ADMIN_TOKEN_BEARER}.
     # Define o email do admin. Poderia ser passado como argumento se tivéssemos múltiplos admins.
+    API Test Setup
     ${ADMIN_EMAIL_FIXTURE}=    Set Variable    admin@example.com     # <-- Ou carrega de ${USER_FIXTURES}
     
     # Garante que o usuário admin existe
