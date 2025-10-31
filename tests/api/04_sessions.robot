@@ -92,6 +92,46 @@ CTC-201_API (API): Buscar detalhes de sessão por ID com sucesso
     Should Be Equal As Strings    ${body['data']['_id']}         ${CREATED_SESSION_ID}
     Should Be Equal As Strings    ${body['data']['movie']['_id']}       ${CREATED_MOVIE_ID}
     Should Be Equal As Strings    ${body['data']['theater']['_id']}    ${CREATED_THEATER_ID}
+
+CN-34 (API): Listar sessões filtrando por Filme
+    [Tags]    API    Filter    Sessions    US-SESSION-001    CTC-013_API    CN-34
+    [Documentation]
+    ...              Dado que existem sessões para o Filme A e Filme B
+    ...              Quando envio GET para "/sessions" filtrando pelo Filme A
+    ...              Então a resposta deve ter status 200
+    ...              E o corpo da resposta deve conter apenas as sessões do Filme A
+    # Setup específico: Usa a sua keyword orquestradora
+    [Setup]    Setup Para Teste de Filtro de Sessão
+
+    # Define os query params para buscar APENAS as sessões do Filme A
+    ${QUERY_PARAMS}=    Create Dictionary
+    ...    movie=${MOVIE_A_ID}    # Filtra pelo ID do Filme A (criado no Setup)
+    ...    limit=5
+
+    # Ação
+    ${response}=    List Sessions    params=${QUERY_PARAMS}
+
+    # Validação
+    Validate Successful API Response
+    ...    response=${response}
+    ...    expected_status_code=200
+    ...    schema_file=${SESSION_SCHEMA_LIST}
+
+    # Validação Extra: Verifica se retornou EXATAMENTE 2 sessões
+    ${body}=    Set Variable    ${response.json()}
+    Should Be Equal As Strings    ${body['count']}    2     
+...    msg=A contagem total de sessões para o Filme A deveria ser 2.
+    Length Should Be            ${body['data']}    2    msg=A lista 'data' deveria conter 2.
+
+    # Validação profunda: Garante que AMBAS as sessões retornadas são do Filme A
+    FOR    ${session}    IN    @{body['data']}
+        ${movie_field}=    Run Keyword If    isinstance($session['movie'], dict)
+        ...    Set Variable    ${session['movie']['_id']}
+        ...    ELSE    Set Variable    ${session['movie']}
+        Should Be Equal As Strings    ${movie_field}    ${MOVIE_A_ID}
+    END
+    Log    Validação concluída: Apenas sessões do Filme A foram retornadas.
+
 *** Keywords ***
 # --- Bloco 1: Keywords de Teardown (Limpam listas) ---
 # (O Test Teardown global chama estas)
@@ -159,7 +199,7 @@ Create Test Movie
     
     Append To List    ${MOVIE_ID_LIST}    ${movie_id}
     Set Test Variable    @{MOVIE_ID_LIST}
-    [Return]    ${movie_id}
+    RETURN    ${movie_id}
 
 Create Test Theater
     [Documentation]    Cria 1 Sala (dinâmica) e prepara para o Teardown. Retorna ID.
@@ -176,23 +216,26 @@ Create Test Theater
     
     Append To List    ${THEATER_ID_LIST}    ${theater_id}
     Set Test Variable    @{THEATER_ID_LIST}
-    [Return]    ${theater_id}
+    RETURN    ${theater_id}
 
 Create Test Session
-    [Documentation]    Cria 1 Sessão (usando IDs) e prepara para o Teardown. Retorna ID.
-    [Arguments]    ${fixture_key}    ${movie_id_str}    ${theater_id_str}
-    
-    ${session_data}=  Get Fixture From Collection    sessions    ${fixture_key}
-    
-    ${session_id}=    Insert Session Directly Into DB
-    ...    session=${session_data}
-    ...    movie_id=${movie_id_str}
-    ...    theater_id=${theater_id_str}
-    Should Not Be Equal    ${session_id}    ${None}    msg=Falha ao criar Sessão pré-requisito.
-    
-    Append To List    ${SESSION_ID_LIST}    ${session_id}
-    Set Test Variable    @{SESSION_ID_LIST}
-    [Return]    ${session_id}
+    [Documentation]    Cria 1 Sessão (usando IDs) e prepara para o Teardown. Retorna ID.
+    [Arguments]    ${fixture_key}    ${movie_id_str}    ${theater_id_str}
+    
+    # 1. Carrega o fixture da SESSÃO
+    ${session_data}=  Get Fixture From Collection    sessions    ${fixture_key}
+    
+    # 2. Chama a keyword Python com os IDs corretos (que foram passados pelo Orquestrador)
+    ${session_id}=    Insert Session Directly Into DB
+    ...    session=${session_data}
+    ...    movie_id=${movie_id_str}
+    ...    theater_id=${theater_id_str}
+    Should Not Be Equal    ${session_id}    ${None}    msg=Falha ao criar Sessão pré-requisito.
+    
+    # 3. Adiciona à lista de cleanup
+    Append To List    ${SESSION_ID_LIST}    ${session_id}
+    Set Test Variable    @{SESSION_ID_LIST}
+    [Return]    ${session_id}
 
 # --- Bloco 3: Keywords Orquestradoras de Setup (Usadas nos Test Cases) ---
 
