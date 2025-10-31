@@ -23,76 +23,44 @@ ${THEATER_FIXTURES}       ../../fixtures/theaters.json
 ${USER_FIXTURES}          ../../fixtures/users.json
 
 # Schemas (Nomes dos arquivos que estarão em /schemas)
-${SESSION_SCHEMA_LIST}      list_sessions_response.schema.json
-${SESSION_SCHEMA_DETAIL}    get_session_details_response.schema.json
+${SESSION_SCHEMA_LIST}          list_sessions_response.schema.json
+${SESSION_SCHEMA_DETAIL}        get_session_details_response.schema.json
+${SESSION_NOT_FOUND_SCHEMA}     session_not_found_error.schema.json     # <-- NOVO SCHEMA
+
+
+${NON_EXISTENT_SESSION_ID}    111111111111111111111111     # ID que garantidamente não existe
 
 *** Test Cases ***
-CN-34 (CTC-13_API): Listar sessões filtrando por Filme
-    [Tags]    API    Smoke    Sessions    US-SESSION-001    CTC-013_API    CN-34
-    [Documentation]
-    ...              Dado que existem sessões para o Filme A e Filme B
-    ...              Quando envio GET para "/sessions" filtrando pelo Filme A
-    ...              Então a resposta deve ter status 200
-    ...              E o corpo da resposta deve conter apenas as sessões do Filme A
-    # Setup específico: Usa a nova keyword orquestradora
-    [Setup]    Setup Para Teste de Filtro de Sessão
 
-    # --- DICIONÁRIO DE QUERY PARAMS COESO ---
-    # Define os query params para buscar APENAS as sessões do Filme A
-    # (O ID ${MOVIE_A_ID} foi criado e definido no [Setup])
-    ${QUERY_PARAMS}=    Create Dictionary
-    ...    movie=${MOVIE_A_ID}    # Filtra pelo ID do Filme A
-    ...    limit=5              # Garante que pegamos todos (setup cria 2)
-
-    # Ação: Chama a keyword do sessions_service com os parâmetros de filtro
-    ${response}=    List Sessions    params=${QUERY_PARAMS}
-
-    # Validação
-    Validate Successful API Response
-    ...    response=${response}
-    ...    expected_status_code=200
-    ...    schema_file=${SESSION_SCHEMA_LIST}     # Valida a estrutura geral da resposta
-
-    # Validação Extra (Coesão): Verifica se o filtro funcionou
-    ${body}=    Set Variable    ${response.json()}
-    # Esperamos que o 'count' (total no DB para esse filtro) seja 2
-    Should Be Equal As Strings    ${body['count']}    2    msg=A contagem total de sessões para o Filme A deveria ser 2.
-    # Esperamos que a 'data' (lista na página) tenha 2 itens
-    Length Should Be            ${body['data']}    2    msg=A lista 'data' deveria conter 2 sessões.
-
-    # Validação profunda: Garante que AMBAS as sessões retornadas são do Filme A
-    FOR    ${session}    IN    @{body['data']}
-        ${movie_field}=    Run Keyword If    isinstance($session['movie'], dict)
-        ...    Set Variable    ${session['movie']['_id']}
-        ...    ELSE    Set Variable    ${session['movie']}
-        Should Be Equal As Strings    ${movie_field}    ${MOVIE_A_ID}
-    END
-    Log    Validação concluída: Apenas sessões do Filme A foram retornadas.
-
-CTC-201_API (API): Buscar detalhes de sessão por ID com sucesso
-    [Tags]    API    Smoke    Sessions    US-SESSION-001    CTC-201_API
+CN-92 (API): Buscar detalhes de sessão por ID com sucesso
+    [Tags]    API    Smoke    Sessions    US-SESSION-001    CTC-043_API    CN-92
     [Documentation]
     ...              Dado que uma sessão específica existe
     ...              Quando eu envio uma requisição GET para "/sessions/{id_da_sessao}"
     ...              Então a resposta deve ter o status code 200
     ...              E o corpo da resposta deve conter os detalhes completos da sessão
+    # Setup específico: Reutiliza o setup que cria 1 Filme, 1 Sala e 1 Sessão
+    # Esta keyword define ${CREATED_SESSION_ID}, ${CREATED_MOVIE_ID}, ${CREATED_THEATER_ID}
     [Setup]    Setup Para Teste de Sessão Simples
 
+    # Dado (Given) - ID foi criado no Setup
     Should Not Be Empty    ${CREATED_SESSION_ID}    msg=ID da Sessão não foi criado/definido no Setup.
     Log    Sessão alvo para GET: ${CREATED_SESSION_ID}
 
+    # Ação: Chama a keyword do sessions_service usando o ID obtido
     ${response}=    Get Session By ID    session_id=${CREATED_SESSION_ID}
 
+    # Validação: Usa a keyword de validação padrão (pois a resposta tem wrapper 'success/data')
     Validate Successful API Response
     ...    response=${response}
     ...    expected_status_code=200
-    ...    schema_file=${SESSION_SCHEMA_DETAIL}
+    ...    schema_file=${SESSION_SCHEMA_DETAIL}     # Usa o schema de detalhes
 
+    # Validação Extra: Compara campos chave entre a resposta e os dados do setup
     ${body}=    Set Variable    ${response.json()}
     Should Be Equal As Strings    ${body['data']['_id']}         ${CREATED_SESSION_ID}
     Should Be Equal As Strings    ${body['data']['movie']['_id']}       ${CREATED_MOVIE_ID}
     Should Be Equal As Strings    ${body['data']['theater']['_id']}    ${CREATED_THEATER_ID}
-
 CN-34 (API): Listar sessões filtrando por Filme
     [Tags]    API    Filter    Sessions    US-SESSION-001    CTC-013_API    CN-34
     [Documentation]
@@ -120,7 +88,7 @@ CN-34 (API): Listar sessões filtrando por Filme
     # Validação Extra: Verifica se retornou EXATAMENTE 2 sessões
     ${body}=    Set Variable    ${response.json()}
     Should Be Equal As Strings    ${body['count']}    2     
-...    msg=A contagem total de sessões para o Filme A deveria ser 2.
+    ...    msg=A contagem total de sessões para o Filme A deveria ser 2.
     Length Should Be            ${body['data']}    2    msg=A lista 'data' deveria conter 2.
 
     # Validação profunda: Garante que AMBAS as sessões retornadas são do Filme A
@@ -130,7 +98,29 @@ CN-34 (API): Listar sessões filtrando por Filme
         ...    ELSE    Set Variable    ${session['movie']}
         Should Be Equal As Strings    ${movie_field}    ${MOVIE_A_ID}
     END
-    Log    Validação concluída: Apenas sessões do Filme A foram retornadas.
+    Log     Validação concluída: Apenas sessões do Filme A foram retornadas.
+
+CN-93 (API): Buscar detalhes de sessão por ID inexistente (404)
+    [Tags]    API    Negative    Sessions    US-SESSION-001    CTC-44    CN-93
+    [Documentation]
+    ...              Dado que um ID de sessão não existe no sistema
+    ...              Quando eu envio uma requisição GET para "/sessions/{id_inexistente}"
+    ...              Então a resposta deve ter o status code 404
+    ...              E o corpo da resposta deve conter a mensagem "Session not found"
+    # Setup: Inicializa as listas de teardown para que o Teardown Completo não falhe
+    [Setup]    Run Keywords    
+    ...    API Test Setup
+    ...    AND
+    ...    Initialize Teardown Lists
+
+    # Ação: Chama a keyword do sessions_service usando um ID inexistente
+    ${response}=    Get Session By ID    session_id=${NON_EXISTENT_SESSION_ID}
+
+    # Validação: Usa a keyword de validação de erro e o schema 404
+    Validate Error API Response
+    ...    response=${response}
+    ...    expected_status_code=404
+    ...    schema_file=${SESSION_NOT_FOUND_SCHEMA}
 
 *** Keywords ***
 # --- Bloco 1: Keywords de Teardown (Limpam listas) ---
@@ -235,7 +225,7 @@ Create Test Session
     # 3. Adiciona à lista de cleanup
     Append To List    ${SESSION_ID_LIST}    ${session_id}
     Set Test Variable    @{SESSION_ID_LIST}
-    [Return]    ${session_id}
+    RETURN    ${session_id}
 
 # --- Bloco 3: Keywords Orquestradoras de Setup (Usadas nos Test Cases) ---
 

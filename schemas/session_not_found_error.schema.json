@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "description": "Indica falha na busca (sessão não encontrada)",
+      "type": "boolean",
+      "const": false
+    },
+    "message": {
+      "description": "Mensagem de erro indicando que a sessão não foi encontrada",
+      "type": "string",
+      "const": "Session not found"
+    }
+  },
+  "required": ["success", "message"],
+  "additionalProperties": false
+}
