@@ -81,7 +81,7 @@ Este projeto aplica diversos padrões de engenharia e inovação:
 
 1.  Clone este repositório:
     ```bash
-    git clone [URL_DO_SEU_REPO]
+    git clone https://github.com/LeoEliel/cinema-challenge-test/tree/dev
     cd cinema-challenge-test
     ```
 2.  Crie e ative um ambiente virtual:
