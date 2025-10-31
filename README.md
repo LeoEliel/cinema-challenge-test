@@ -5,7 +5,7 @@
 
 ## 1. Visão Geral e Estratégia
 
-O objetivo deste projeto não foi atingir 100% de cobertura de casos de teste, mas sim construir uma **"fábrica de testes" (framework)** robusta, aderente aos princípios de Engenharia de Qualidade (QE).
+O objetivo deste projeto mas sim construir uma **"fábrica de testes" (framework)** robusta, aderente aos princípios de Engenharia de Qualidade (QE).
 
 A estratégia priorizou a **API-First** e garantiu que cada caso de teste fosse **100% independente e idempotente** (pode rodar várias vezes sem falhar) através de um gerenciamento avançado de setup e teardown.
 
